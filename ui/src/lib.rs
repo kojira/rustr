@@ -5,6 +5,7 @@ mod onboarding;
 mod font_config;
 mod settings;
 mod emoji_label;
+mod i18n;
 
 #[cfg(feature = "debug-test")]
 mod debug_test;

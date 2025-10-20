@@ -12,6 +12,7 @@ use crate::timeline::Timeline;
 use crate::composer::Composer;
 use crate::onboarding::{Onboarding, OnboardingResult};
 use crate::settings::SettingsView;
+use crate::i18n::I18n;
 
 #[cfg(feature = "debug-test")]
 use crate::debug_test::{DebugTestRunner, is_debug_test_enabled};
@@ -32,6 +33,7 @@ pub struct NostrApp {
     timeline: Timeline,
     composer: Composer,
     settings: SettingsView,
+    i18n: I18n,
     
     // Core (Rc<RefCell<>>でUIから変更可能にする)
     core: Rc<RefCell<Option<CoreHandle>>>,
@@ -70,6 +72,7 @@ impl NostrApp {
             timeline: Timeline::new(),
             composer: Composer::new(),
             settings: SettingsView::new(),
+            i18n: I18n::default(),
             core: Rc::new(RefCell::new(None)),
             storage: Rc::new(RefCell::new(None)),
             show_composer: false,
