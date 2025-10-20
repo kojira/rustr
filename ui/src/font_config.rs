@@ -68,25 +68,38 @@ impl FontConfig {
     pub fn apply_to_egui(&self, ctx: &egui::Context) {
         match self.font_family {
             FontFamily::NotoSansJP => {
-                // デフォルトのフォント定義を取得（絵文字フォントを含む）
+                // デフォルトのフォント定義を取得
                 let mut fonts = egui::FontDefinitions::default();
                 
-                // Noto Sans JPフォントデータを埋め込み
-                let font_data = include_bytes!("../assets/fonts/NotoSansJP-Regular.ttf");
+                // Noto Sans JPフォントデータを埋め込み（日本語用）
+                let noto_sans_jp = include_bytes!("../assets/fonts/NotoSansJP-Regular.ttf");
                 fonts.font_data.insert(
                     "NotoSansJP".to_owned(),
-                    egui::FontData::from_static(font_data),
+                    egui::FontData::from_static(noto_sans_jp),
+                );
+
+                // Noto Color Emojiフォントデータを埋め込み（絵文字用）
+                let noto_emoji = include_bytes!("../assets/fonts/NotoColorEmoji.ttf");
+                fonts.font_data.insert(
+                    "NotoColorEmoji".to_owned(),
+                    egui::FontData::from_static(noto_emoji),
                 );
 
                 // Proportionalファミリーの優先順位を設定
                 // 1. NotoSansJP (日本語)
-                // 2. emoji-icon-font (絵文字) - eGuiのデフォルト（既に含まれている）
+                // 2. NotoColorEmoji (絵文字)
                 // 3. その他のデフォルトフォント
                 fonts
                     .families
                     .get_mut(&egui::FontFamily::Proportional)
                     .unwrap()
                     .insert(0, "NotoSansJP".to_owned());
+                
+                fonts
+                    .families
+                    .get_mut(&egui::FontFamily::Proportional)
+                    .unwrap()
+                    .insert(1, "NotoColorEmoji".to_owned());
 
                 // Monospaceファミリーにも追加（コードブロック用）
                 fonts
@@ -94,6 +107,12 @@ impl FontConfig {
                     .get_mut(&egui::FontFamily::Monospace)
                     .unwrap()
                     .insert(0, "NotoSansJP".to_owned());
+                
+                fonts
+                    .families
+                    .get_mut(&egui::FontFamily::Monospace)
+                    .unwrap()
+                    .insert(1, "NotoColorEmoji".to_owned());
                 
                 ctx.set_fonts(fonts);
             }
