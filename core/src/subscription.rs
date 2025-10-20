@@ -42,8 +42,8 @@ impl SubscriptionManager {
         let window = TimeWindow::new(since);
         self.channel_windows.insert(channel_id.to_string(), window);
 
-        // サブスクリプションIDは短く（最大64文字推奨）
-        let sub_id = format!("ch:{}", &channel_id[..16]);
+        // サブスクリプションIDを生成
+        let sub_id = format!("ch:{}", channel_id);
         let filter = json!({
             "kinds": [42], // NIP-28 channel message
             "#e": [channel_id],
@@ -72,8 +72,8 @@ impl SubscriptionManager {
         let window = TimeWindow::new(since);
         self.dm_windows.insert(peer.to_string(), window);
 
-        // サブスクリプションIDは短く（最大64文字推奨）
-        let sub_id = format!("dm:{}", &peer[..16]);
+        // サブスクリプションIDを生成
+        let sub_id = format!("dm:{}", peer);
         
         // NIP-04: kind=4, authors=[self] OR #p=[self]
         let filter = json!({
@@ -95,7 +95,7 @@ impl SubscriptionManager {
         );
 
         // 逆方向のフィルター（peer -> self）
-        let sub_id2 = format!("dm:{}:r", &peer[..16]);
+        let sub_id2 = format!("dm:{}:r", peer);
         let filter2 = json!({
             "kinds": [4],
             "authors": [peer],

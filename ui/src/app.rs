@@ -488,9 +488,13 @@ impl NostrApp {
                 
                 ui.separator();
                 
-                if ui.button("📢 Public").clicked() {
-                    self.open_channel("general".to_string());
-                }
+                // TODO: 実際のチャンネル一覧を表示する
+                // 現在は仮実装として無効化
+                // if ui.button("📢 Public").clicked() {
+                //     // 本来はチャンネル一覧から選択、または新規作成
+                //     self.open_channel("general".to_string());
+                // }
+                crate::emoji_label::emoji_label(ui, "📢 Public channels: 未実装");
                 
                 if ui.button("💬 DMs").clicked() {
                     // デモ用：特定のpubkeyとのDMを開く
