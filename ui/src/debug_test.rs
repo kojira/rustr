@@ -47,17 +47,16 @@ pub struct DebugTestRunner {
 impl DebugTestRunner {
     /// 新規作成
     pub fn new(enabled: bool) -> Self {
+        // デバッグテスト用の固定チャンネル名
+        // この名前でチャンネルを検索/作成するので、毎回同じチャンネルを使う
+        const DEBUG_CHANNEL_NAME: &str = "rustr_debug_test";
+        
         let scenario = vec![
             TestStep::Idle,
             TestStep::OnboardingCreateKey,
             TestStep::TransitionToMain,
-            TestStep::CreateChannel {
-                name: "🧪 Test Channel".to_string(),
-                about: "Automated test channel".to_string(),
-            },
-            TestStep::WaitForChannelCreation,
             TestStep::OpenChannel { 
-                channel_id: String::new() // 作成後に設定される
+                channel_id: DEBUG_CHANNEL_NAME.to_string()
             },
             TestStep::SendMessage { 
                 content: "🤖 自動テスト: Hello from debug mode!".to_string() 

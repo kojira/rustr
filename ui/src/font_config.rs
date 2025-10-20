@@ -66,10 +66,11 @@ impl FontConfig {
 
     /// フォントをeGuiに適用
     pub fn apply_to_egui(&self, ctx: &egui::Context) {
-        let mut fonts = egui::FontDefinitions::default();
-
         match self.font_family {
             FontFamily::NotoSansJP => {
+                // デフォルトのフォント定義を取得（絵文字フォントを含む）
+                let mut fonts = egui::FontDefinitions::default();
+                
                 // Noto Sans JPフォントデータを埋め込み
                 let font_data = include_bytes!("../assets/fonts/NotoSansJP-Regular.ttf");
                 fonts.font_data.insert(
@@ -77,26 +78,29 @@ impl FontConfig {
                     egui::FontData::from_static(font_data),
                 );
 
-                // Proportionalファミリーの最優先に設定
+                // Proportionalファミリーの優先順位を設定
+                // 1. NotoSansJP (日本語)
+                // 2. emoji-icon-font (絵文字) - eGuiのデフォルト（既に含まれている）
+                // 3. その他のデフォルトフォント
                 fonts
                     .families
-                    .entry(egui::FontFamily::Proportional)
-                    .or_default()
+                    .get_mut(&egui::FontFamily::Proportional)
+                    .unwrap()
                     .insert(0, "NotoSansJP".to_owned());
 
                 // Monospaceファミリーにも追加（コードブロック用）
                 fonts
                     .families
-                    .entry(egui::FontFamily::Monospace)
-                    .or_default()
+                    .get_mut(&egui::FontFamily::Monospace)
+                    .unwrap()
                     .insert(0, "NotoSansJP".to_owned());
+                
+                ctx.set_fonts(fonts);
             }
             FontFamily::SystemDefault => {
                 // デフォルトフォントを使用（何もしない）
             }
         }
-
-        ctx.set_fonts(fonts);
     }
 }
 
