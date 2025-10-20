@@ -1,0 +1,8 @@
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "--cfg", "secp256k1_sys_no_external_symbols"
+]
+
+[build]
+target = "wasm32-unknown-unknown"
+

@@ -1,0 +1,29 @@
+[package]
+name = "ui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+core = { path = "../core" }
+
+eframe = { workspace = true, features = ["glow"] }
+egui = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = ["Window", "Document", "HtmlCanvasElement"] }
+js-sys = { workspace = true }
+log = { workspace = true }
+console_error_panic_hook = { workspace = true }
+console_log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+

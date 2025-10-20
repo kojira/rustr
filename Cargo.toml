@@ -1,0 +1,49 @@
+[workspace]
+members = ["core", "ui"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["kojira"]
+license = "MIT"
+
+[workspace.dependencies]
+# Nostr - NostrShrineと完全に同じ設定 + NIP-04
+nostr = { version = "0.43", default-features = false, features = ["std", "nip04"] }
+
+# WASM/Web
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = "0.3"
+js-sys = "0.3"
+
+# IndexedDB
+rexie = "0.6"
+
+# Async
+tokio = { version = "1", features = ["sync"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde-wasm-bindgen = "0.6"
+hex = "0.4"
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Random (WASM対応に必須)
+getrandom = { version = "0.2", features = ["js"] }
+
+# egui
+eframe = { version = "0.29", default-features = false, features = ["glow", "default_fonts"] }
+egui = "0.29"
+
+# Logging
+log = "0.4"
+console_error_panic_hook = "0.1"
+console_log = "1"
+

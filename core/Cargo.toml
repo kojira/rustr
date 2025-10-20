@@ -1,0 +1,45 @@
+[package]
+name = "core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nostr = { workspace = true }
+rexie = { workspace = true }
+getrandom = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "WebSocket",
+    "MessageEvent",
+    "ErrorEvent",
+    "CloseEvent",
+    "BinaryType",
+    "Crypto",
+    "SubtleCrypto",
+    "CryptoKey",
+    "AesGcmParams",
+    "Pbkdf2Params",
+    "Performance",
+    "console",
+] }
+js-sys = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
