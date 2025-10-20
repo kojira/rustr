@@ -42,4 +42,5 @@ hex = { workspace = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
 

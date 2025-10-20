@@ -56,7 +56,10 @@ wasm-pack build --target web --out-dir ../ui/pkg
 ### 開発
 
 ```bash
-# 開発サーバーを起動
+# 開発サーバーを起動（自動ビルド含む）
+./scripts/dev-server.sh
+
+# または手動で
 cd ui/pkg
 python3 -m http.server 8080
 # または
@@ -64,6 +67,21 @@ npx serve
 ```
 
 http://localhost:8080 でアプリケーションが起動します。
+
+### テスト
+
+```bash
+# ユニットテストを実行
+./scripts/test.sh
+
+# または手動で
+cd core
+cargo test --lib --target aarch64-apple-darwin
+cargo test --test integration_test --target aarch64-apple-darwin
+```
+
+**注意**: WASM環境でのテストは`wasm-pack test --headless --chrome`で実行できますが、
+`secp256k1`のビルド問題により、現在はネイティブターゲットでのテストのみサポートしています。
 
 ## プロジェクト構造
 

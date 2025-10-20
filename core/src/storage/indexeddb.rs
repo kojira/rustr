@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use rexie::*;
 use serde_json;
 use wasm_bindgen::{JsValue, JsCast};
-use js_sys::Uint8Array;
 
 use crate::storage::Storage;
 use crate::types::{StoredEvent, StorageFilter, DmThread, OutboxItem, OutboxStatus};

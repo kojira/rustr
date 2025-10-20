@@ -231,11 +231,14 @@ fn current_timestamp() -> i64 {
     (js_sys::Date::now() / 1000.0) as i64
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_arch = "wasm32"))]
 mod tests {
     use super::*;
+    use wasm_bindgen_test::*;
 
-    #[test]
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
     fn test_open_channel() {
         let mut mgr = SubscriptionManager::new();
         let filters = mgr.open_channel("test_channel");
@@ -248,7 +251,7 @@ mod tests {
         assert_eq!(filter["#e"][0], "test_channel");
     }
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_open_dm() {
         let mut mgr = SubscriptionManager::new();
         let self_pubkey = "self123";
@@ -265,7 +268,7 @@ mod tests {
         assert_eq!(filter1["#p"][0], peer);
     }
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_eose_extension() {
         let mut mgr = SubscriptionManager::new();
         mgr.open_channel("test");

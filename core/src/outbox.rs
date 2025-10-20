@@ -186,12 +186,15 @@ fn current_timestamp() -> i64 {
     (js_sys::Date::now() / 1000.0) as i64
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_arch = "wasm32"))]
 mod tests {
     use super::*;
     use crate::storage::mock::MockStorage;
+    use wasm_bindgen_test::*;
 
-    #[tokio::test]
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
     async fn test_enqueue() {
         let storage = Arc::new(MockStorage::new());
         let mut queue = OutboxQueue::new(storage);
@@ -203,7 +206,7 @@ mod tests {
         assert_eq!(queue.len(), 1);
     }
 
-    #[tokio::test]
+    #[wasm_bindgen_test]
     async fn test_on_ok_accepted() {
         let storage = Arc::new(MockStorage::new());
         let mut queue = OutboxQueue::new(storage);
@@ -215,7 +218,7 @@ mod tests {
         assert_eq!(queue.len(), 0);
     }
 
-    #[tokio::test]
+    #[wasm_bindgen_test]
     async fn test_on_ok_rejected() {
         let storage = Arc::new(MockStorage::new());
         let mut queue = OutboxQueue::new(storage);

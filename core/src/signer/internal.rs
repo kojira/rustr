@@ -3,7 +3,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{CryptoKey, SubtleCrypto};
 use js_sys::{Uint8Array, Object, Reflect};
-use nostr::{Keys, Event, EventBuilder, Kind, Tag, Timestamp};
+use nostr::{Keys, EventBuilder, Kind, Tag};
 
 use super::{Signer, UnsignedEvent, SignedEvent};
 use crate::storage::Storage;
