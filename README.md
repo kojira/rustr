@@ -110,11 +110,15 @@ python3 -m http.server 8080
 
 実行状態は画面上部に黄色いバーで表示されます。
 
+**詳細ドキュメント**:
+- [デバッグテストモード詳細ガイド](docs/DEBUG_TEST_MODE.md)
+- [クイックリファレンス](docs/DEBUG_TEST_QUICK_REFERENCE.md)
+
 ## プロジェクト構造
 
 ```
 rustr/
-├── core/           # コアロジック（WASM）
+├── core/                  # コアロジック（WASM）
 │   ├── src/
 │   │   ├── lib.rs
 │   │   ├── types.rs
@@ -123,19 +127,35 @@ rustr/
 │   │   ├── subscription.rs
 │   │   ├── outbox.rs
 │   │   └── signer/
+│   ├── tests/
 │   └── Cargo.toml
-├── ui/             # egui UI
+├── ui/                    # egui UI
 │   ├── src/
-│   │   ├── main.rs
+│   │   ├── lib.rs
 │   │   ├── app.rs
 │   │   ├── timeline.rs
 │   │   ├── composer.rs
-│   │   └── onboarding.rs
+│   │   ├── onboarding.rs
+│   │   └── debug_test.rs  # デバッグテストランナー
+│   ├── tests/
 │   ├── index.html
 │   └── Cargo.toml
 ├── scripts/
-│   └── build-wasm.sh
-└── Cargo.toml      # workspace
+│   ├── build-wasm.sh
+│   ├── build-wasm-debug.sh
+│   ├── dev-server.sh
+│   └── test.sh
+├── docs/                  # ドキュメント
+│   ├── DEBUG_TEST_MODE.md
+│   └── DEBUG_TEST_QUICK_REFERENCE.md
+├── .github/
+│   └── workflows/
+│       └── test.yml
+├── README.md
+├── TESTING.md
+├── PROGRESS.md
+├── TODO.md
+└── Cargo.toml             # workspace
 ```
 
 ## トラブルシューティング
