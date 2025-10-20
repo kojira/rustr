@@ -11,6 +11,7 @@ use core::signer::Signer;
 use crate::timeline::Timeline;
 use crate::composer::Composer;
 use crate::onboarding::{Onboarding, OnboardingResult};
+use crate::settings::SettingsView;
 
 #[cfg(feature = "debug-test")]
 use crate::debug_test::{DebugTestRunner, is_debug_test_enabled};
@@ -30,6 +31,7 @@ pub struct NostrApp {
     onboarding: Onboarding,
     timeline: Timeline,
     composer: Composer,
+    settings: SettingsView,
     
     // Core (Rc<RefCell<>>でUIから変更可能にする)
     core: Rc<RefCell<Option<CoreHandle>>>,
@@ -37,6 +39,7 @@ pub struct NostrApp {
     
     // UI状態
     show_composer: bool,
+    show_settings: bool,
     current_channel: Option<String>,
     current_dm_peer: Option<String>,
     error_message: Option<String>,
@@ -63,9 +66,11 @@ impl NostrApp {
             onboarding: Onboarding::new(),
             timeline: Timeline::new(),
             composer: Composer::new(),
+            settings: SettingsView::new(),
             core: Rc::new(RefCell::new(None)),
             storage: Rc::new(RefCell::new(None)),
             show_composer: false,
+            show_settings: false,
             current_channel: None,
             current_dm_peer: None,
             error_message: None,
@@ -496,12 +501,27 @@ impl NostrApp {
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button("⚙").clicked() {
-                        log::info!("Settings feature - not yet implemented");
-                        // 設定画面: Relay管理、鍵のエクスポート等
+                        self.show_settings = !self.show_settings;
                     }
                 });
             });
         });
+        
+        // 設定モーダル
+        if self.show_settings {
+            egui::Window::new("⚙️ 設定")
+                .collapsible(false)
+                .resizable(true)
+                .default_width(500.0)
+                .show(ctx, |ui| {
+                    self.settings.show(ctx, ui);
+                    
+                    ui.add_space(10.0);
+                    if ui.button("✖ 閉じる").clicked() {
+                        self.show_settings = false;
+                    }
+                });
+        }
         
         // コンポーザー（下部）
         if self.show_composer {

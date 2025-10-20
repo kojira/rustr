@@ -2,6 +2,8 @@ mod app;
 mod timeline;
 mod composer;
 mod onboarding;
+mod font_config;
+mod settings;
 
 #[cfg(feature = "debug-test")]
 mod debug_test;
@@ -44,16 +46,9 @@ pub async fn start_app(canvas_id: String) -> Result<(), JsValue> {
             canvas,
             web_options,
             Box::new(|cc| {
-                // 日本語フォントを設定
-                let mut fonts = egui::FontDefinitions::default();
-                
-                // eGuiに含まれる日本語フォントを優先的に使用
-                fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap()
-                    .insert(0, "NotoSansJP-Regular".to_owned());
-                fonts.families.get_mut(&egui::FontFamily::Monospace).unwrap()
-                    .insert(0, "NotoSansJP-Regular".to_owned());
-                
-                cc.egui_ctx.set_fonts(fonts);
+                // フォント設定を読み込んで適用
+                let font_config = crate::font_config::FontConfig::load();
+                font_config.apply_to_egui(&cc.egui_ctx);
                 
                 // フォントサイズを大きくする
                 let mut style = (*cc.egui_ctx.style()).clone();

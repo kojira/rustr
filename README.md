@@ -9,6 +9,8 @@
 - **NIP-07**: ブラウザ拡張機能による署名
 - **Storage抽象化**: IndexedDB（将来的にネイティブ移行可能）
 - **スマホ最適化**: タッチ操作、IME対応、レスポンシブUI
+- **日本語・絵文字対応**: Noto Sans JP フォント内蔵
+- **フォント選択**: 設定画面からフォントを変更可能
 
 ## 技術スタック
 
@@ -181,6 +183,15 @@ GitHub ActionsまたはLinux環境でビルドしてください。
 ## ライセンス
 
 MIT License
+
+### サードパーティライセンス
+
+このプロジェクトは以下のフォントを含んでいます：
+
+- **Noto Sans JP**: SIL Open Font License 1.1
+  - 著作権: Copyright 2014-2021 Adobe (http://www.adobe.com/)
+  - ライセンス詳細: `ui/assets/fonts/OFL.txt`
+  - ソース: [Google Fonts - Noto Sans JP](https://fonts.google.com/noto/specimen/Noto+Sans+JP)
 
 ## 参考プロジェクト
 
