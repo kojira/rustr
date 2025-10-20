@@ -123,9 +123,6 @@ impl NostrApp {
         let mut core = CoreHandle::init(relay_urls, storage.clone()).await?;
         core.set_signer(signer);
         
-        // Relay接続開始
-        // TODO: connect処理
-        
         Ok((core, storage))
     }
     
@@ -273,12 +270,16 @@ impl NostrApp {
                 }
                 
                 if ui.button("💬 DMs").clicked() {
-                    // TODO: DM一覧を表示
+                    // デモ用：特定のpubkeyとのDMを開く
+                    // 実装: StorageからDMスレッド一覧を取得して選択UI表示
+                    log::info!("DM list feature - not yet implemented");
+                    ui.label("DM一覧機能は今後実装予定");
                 }
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button("⚙").clicked() {
-                        // TODO: 設定画面
+                        log::info!("Settings feature - not yet implemented");
+                        // 設定画面: Relay管理、鍵のエクスポート等
                     }
                 });
             });

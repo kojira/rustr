@@ -97,14 +97,42 @@ impl Signer for Nip07Signer {
         })
     }
 
-    async fn nip04_encrypt(&self, _pubkey: &str, _plaintext: &str) -> Result<String> {
-        // TODO: NIP-04暗号化実装
-        Err(CoreError::Other("NIP-04 encrypt not implemented".to_string()))
+    async fn nip04_encrypt(&self, pubkey: &str, plaintext: &str) -> Result<String> {
+        let nostr = Self::get_nostr()?;
+        
+        // nip04.encrypt(pubkey, plaintext)を呼び出し
+        let nip04 = Reflect::get(&nostr, &JsValue::from_str("nip04"))?;
+        let encrypt_fn = Reflect::get(&nip04, &JsValue::from_str("encrypt"))?
+            .unchecked_into::<js_sys::Function>();
+        
+        let args = js_sys::Array::new();
+        args.push(&JsValue::from_str(pubkey));
+        args.push(&JsValue::from_str(plaintext));
+        
+        let promise = encrypt_fn.apply(&nip04, &args)?;
+        let result = JsFuture::from(js_sys::Promise::from(promise)).await?;
+        
+        result.as_string()
+            .ok_or_else(|| CoreError::SignerError("NIP-04 encrypt failed".to_string()))
     }
 
-    async fn nip04_decrypt(&self, _pubkey: &str, _ciphertext: &str) -> Result<String> {
-        // TODO: NIP-04復号化実装
-        Err(CoreError::Other("NIP-04 decrypt not implemented".to_string()))
+    async fn nip04_decrypt(&self, pubkey: &str, ciphertext: &str) -> Result<String> {
+        let nostr = Self::get_nostr()?;
+        
+        // nip04.decrypt(pubkey, ciphertext)を呼び出し
+        let nip04 = Reflect::get(&nostr, &JsValue::from_str("nip04"))?;
+        let decrypt_fn = Reflect::get(&nip04, &JsValue::from_str("decrypt"))?
+            .unchecked_into::<js_sys::Function>();
+        
+        let args = js_sys::Array::new();
+        args.push(&JsValue::from_str(pubkey));
+        args.push(&JsValue::from_str(ciphertext));
+        
+        let promise = decrypt_fn.apply(&nip04, &args)?;
+        let result = JsFuture::from(js_sys::Promise::from(promise)).await?;
+        
+        result.as_string()
+            .ok_or_else(|| CoreError::SignerError("NIP-04 decrypt failed".to_string()))
     }
 }
 

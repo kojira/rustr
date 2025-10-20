@@ -27,25 +27,8 @@ impl Timeline {
     /// チャンネルのイベントを読み込み
     pub fn load_channel(&mut self, channel_id: &str) {
         log::info!("Loading channel: {}", channel_id);
-        // TODO: CoreHandle経由でイベントを取得
-        
-        // デモデータ
-        self.events = vec![
-            TimelineEvent {
-                id: "1".to_string(),
-                pubkey: "alice".to_string(),
-                content: "Hello, Nostr!".to_string(),
-                created_at: 1700000000,
-                kind: 42,
-            },
-            TimelineEvent {
-                id: "2".to_string(),
-                pubkey: "bob".to_string(),
-                content: "Welcome to the decentralized future!".to_string(),
-                created_at: 1700000100,
-                kind: 42,
-            },
-        ];
+        // イベントをクリア（実データはadd_eventで追加される）
+        self.events.clear();
     }
     
     /// DMのイベントを読み込み
@@ -121,7 +104,6 @@ impl Timeline {
 }
 
 fn format_timestamp(ts: i64) -> String {
-    // TODO: 適切な時刻フォーマット
     let now = js_sys::Date::now() / 1000.0;
     let diff = now as i64 - ts;
     

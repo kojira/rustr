@@ -83,13 +83,36 @@ impl Storage for IndexedDbStorage {
         let tx = self.db.transaction(&[STORE_EVENTS], TransactionMode::ReadOnly)?;
         let store = tx.store(STORE_EVENTS)?;
 
-        // TODO: フィルター適用（現状は全件取得）
+        // 全件取得してメモリ上でフィルタリング
+        // （IndexedDBのインデックスを使った最適化は将来の改善として）
         let all = store.get_all(None, None).await?;
 
         let mut events = Vec::new();
         for value in all {
             if let Some(json_str) = value.as_string() {
                 if let Ok(event) = serde_json::from_str::<StoredEvent>(&json_str) {
+                    // フィルター適用
+                    if let Some(kinds) = &filter.kinds {
+                        if !kinds.contains(&event.kind) {
+                            continue;
+                        }
+                    }
+                    if let Some(authors) = &filter.authors {
+                        if !authors.contains(&event.pubkey) {
+                            continue;
+                        }
+                    }
+                    if let Some(since) = filter.since {
+                        if event.created_at < since {
+                            continue;
+                        }
+                    }
+                    if let Some(until) = filter.until {
+                        if event.created_at > until {
+                            continue;
+                        }
+                    }
+                    
                     events.push(event);
                 }
             }
