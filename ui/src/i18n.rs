@@ -38,8 +38,8 @@ impl I18n {
         Self { language }
     }
     
-    pub fn language(&self) -> Language {
-        self.language
+    pub fn language(&self) -> &Language {
+        &self.language
     }
     
     pub fn set_language(&mut self, language: Language) {

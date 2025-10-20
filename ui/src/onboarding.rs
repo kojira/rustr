@@ -1,4 +1,5 @@
 use eframe::egui;
+use crate::i18n::I18n;
 
 /// オンボーディング画面
 pub struct Onboarding {
@@ -37,64 +38,64 @@ impl Onboarding {
     
     /// オンボーディング画面を表示
     /// 完了したら Some(OnboardingResult) を返す
-    pub fn show(&mut self, ui: &mut egui::Ui) -> Option<OnboardingResult> {
+    pub fn show(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> Option<OnboardingResult> {
         match self.step {
             OnboardingStep::Welcome => {
-                self.show_welcome(ui);
+                self.show_welcome(ui, i18n);
                 None
             }
             OnboardingStep::ChooseSigner => {
-                self.show_choose_signer(ui)
+                self.show_choose_signer(ui, i18n)
             }
             OnboardingStep::ImportKey => {
-                self.show_import_key(ui)
+                self.show_import_key(ui, i18n)
             }
             OnboardingStep::CreateKey => {
-                self.show_create_key(ui)
+                self.show_create_key(ui, i18n)
             }
             OnboardingStep::Completed => None,
         }
     }
     
-    fn show_welcome(&mut self, ui: &mut egui::Ui) {
+    fn show_welcome(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         ui.vertical_centered(|ui| {
             ui.add_space(100.0);
-            crate::emoji_label::emoji_heading(ui, "🦀 Welcome to Rustr");
+            crate::emoji_label::emoji_heading(ui, i18n.onboarding_welcome_title());
             ui.add_space(20.0);
-            crate::emoji_label::emoji_label(ui, "A decentralized Nostr client built with Rust and egui");
+            crate::emoji_label::emoji_label(ui, i18n.onboarding_welcome_description());
             ui.add_space(40.0);
             
-            if ui.button("Get Started →").clicked() {
+            if ui.button(i18n.onboarding_get_started()).clicked() {
                 self.step = OnboardingStep::ChooseSigner;
             }
         });
     }
     
-    fn show_choose_signer(&mut self, ui: &mut egui::Ui) -> Option<OnboardingResult> {
+    fn show_choose_signer(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> Option<OnboardingResult> {
         let mut result = None;
         
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
-            crate::emoji_label::emoji_heading(ui, "Choose Your Signer");
+            crate::emoji_label::emoji_heading(ui, i18n.onboarding_choose_signer_title());
             ui.add_space(20.0);
             
             ui.group(|ui| {
                 ui.set_min_width(400.0);
                 
-                if ui.button("🔌 Use Browser Extension (NIP-07)").clicked() {
+                if ui.button(i18n.onboarding_use_extension()).clicked() {
                     log::info!("Selected NIP-07");
                     result = Some(OnboardingResult::Nip07);
                 }
                 
                 ui.add_space(10.0);
                 
-                if ui.button("📥 Import Existing Key").clicked() {
+                if ui.button(i18n.onboarding_import_key()).clicked() {
                     self.step = OnboardingStep::ImportKey;
                 }
                 
                 ui.add_space(10.0);
                 
-                if ui.button("✨ Create New Key").clicked() {
+                if ui.button(i18n.onboarding_create_key()).clicked() {
                     self.step = OnboardingStep::CreateKey;
                 }
             });
@@ -109,36 +110,36 @@ impl Onboarding {
         result
     }
     
-    fn show_import_key(&mut self, ui: &mut egui::Ui) -> Option<OnboardingResult> {
+    fn show_import_key(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> Option<OnboardingResult> {
         let mut result = None;
         
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
-            crate::emoji_label::emoji_heading(ui, "Import Your Key");
+            crate::emoji_label::emoji_heading(ui, i18n.onboarding_import_key_title());
             ui.add_space(20.0);
             
             ui.group(|ui| {
                 ui.set_min_width(400.0);
                 
-                crate::emoji_label::emoji_label(ui, "Enter your nsec (private key):");
+                crate::emoji_label::emoji_label(ui, i18n.onboarding_enter_nsec());
                 ui.text_edit_singleline(&mut self.nsec_input);
                 
                 ui.add_space(10.0);
                 
-                crate::emoji_label::emoji_label(ui, "Passphrase (for encryption):");
+                crate::emoji_label::emoji_label(ui, i18n.onboarding_passphrase());
                 ui.add(egui::TextEdit::singleline(&mut self.passphrase_input).password(true));
                 
                 ui.add_space(20.0);
                 
                 ui.horizontal(|ui| {
-                    if ui.button("← Back").clicked() {
+                    if ui.button(i18n.onboarding_back()).clicked() {
                         self.step = OnboardingStep::ChooseSigner;
                         self.error_message = None;
                     }
                     
-                    if ui.button("Import →").clicked() {
+                    if ui.button(i18n.onboarding_import()).clicked() {
                         if self.nsec_input.is_empty() || self.passphrase_input.is_empty() {
-                            self.error_message = Some("Please fill in all fields".to_string());
+                            self.error_message = Some(i18n.onboarding_error_fill_fields().to_string());
                         } else {
                             log::info!("Importing key");
                             result = Some(OnboardingResult::ImportKey {
@@ -160,36 +161,36 @@ impl Onboarding {
         result
     }
     
-    fn show_create_key(&mut self, ui: &mut egui::Ui) -> Option<OnboardingResult> {
+    fn show_create_key(&mut self, ui: &mut egui::Ui, i18n: &I18n) -> Option<OnboardingResult> {
         let mut result = None;
         
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
-            crate::emoji_label::emoji_heading(ui, "Create New Key");
+            crate::emoji_label::emoji_heading(ui, i18n.onboarding_create_key_title());
             ui.add_space(20.0);
             
             ui.group(|ui| {
                 ui.set_min_width(400.0);
                 
-                crate::emoji_label::emoji_label(ui, "Set a passphrase to encrypt your key:");
+                crate::emoji_label::emoji_label(ui, i18n.onboarding_set_passphrase());
                 ui.add(egui::TextEdit::singleline(&mut self.passphrase_input).password(true));
                 
                 ui.add_space(10.0);
                 
-                crate::emoji_label::emoji_label(ui, "⚠ Important: Save your passphrase securely!");
-                crate::emoji_label::emoji_label(ui, "You'll need it to access your account.");
+                crate::emoji_label::emoji_label(ui, i18n.onboarding_important_warning());
+                crate::emoji_label::emoji_label(ui, i18n.onboarding_need_passphrase());
                 
                 ui.add_space(20.0);
                 
                 ui.horizontal(|ui| {
-                    if ui.button("← Back").clicked() {
+                    if ui.button(i18n.onboarding_back()).clicked() {
                         self.step = OnboardingStep::ChooseSigner;
                         self.error_message = None;
                     }
                     
-                    if ui.button("Create Key →").clicked() {
+                    if ui.button(i18n.onboarding_create()).clicked() {
                         if self.passphrase_input.is_empty() {
-                            self.error_message = Some("Please enter a passphrase".to_string());
+                            self.error_message = Some(i18n.onboarding_error_enter_passphrase().to_string());
                         } else {
                             log::info!("Creating new key");
                             result = Some(OnboardingResult::CreateKey {

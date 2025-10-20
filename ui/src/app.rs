@@ -469,7 +469,7 @@ impl eframe::App for NostrApp {
             AppState::Onboarding => {
                 // オンボーディング画面
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    if let Some(result) = self.onboarding.show(ui) {
+                    if let Some(result) = self.onboarding.show(ui, &self.i18n) {
                         self.complete_onboarding(result);
                     }
                 });
@@ -497,17 +497,17 @@ impl NostrApp {
                 
                 ui.separator();
                 
-                if ui.button("📢 Public").clicked() {
+                if ui.button(self.i18n.button_public()).clicked() {
                     self.show_channel_create = true;
                 }
                 
-                if ui.button("💬 DMs").clicked() {
+                if ui.button(self.i18n.button_dms()).clicked() {
                     // TODO: DM一覧を表示
                     log::info!("DM list feature - not yet implemented");
                 }
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("⚙").clicked() {
+                    if ui.button(self.i18n.button_settings()).clicked() {
                         self.show_settings = !self.show_settings;
                     }
                 });
@@ -521,10 +521,10 @@ impl NostrApp {
                 .resizable(true)
                 .default_width(500.0)
                 .show(ctx, |ui| {
-                    self.settings.show(ctx, ui);
+                    self.settings.show(ctx, ui, &mut self.i18n);
                     
                     ui.add_space(10.0);
-                    if ui.button("✖ 閉じる").clicked() {
+                    if ui.button(self.i18n.button_close()).clicked() {
                         self.show_settings = false;
                     }
                 });
@@ -538,11 +538,11 @@ impl NostrApp {
         // コンポーザー（下部）
         if self.show_composer {
             egui::TopBottomPanel::bottom("composer").show(ctx, |ui| {
-                if let Some(content) = self.composer.show(ui) {
+                if let Some(content) = self.composer.show(ui, &self.i18n) {
                     self.send_message(content);
                 }
                 
-                if ui.button("✖ Close").clicked() {
+                if ui.button(self.i18n.button_close()).clicked() {
                     self.show_composer = false;
                 }
             });
@@ -550,7 +550,7 @@ impl NostrApp {
             // コンポーザーを開くボタン
             egui::TopBottomPanel::bottom("composer_button").show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    if ui.button("✏ New Post").clicked() {
+                    if ui.button(self.i18n.button_new_post()).clicked() {
                         self.show_composer = true;
                     }
                     
@@ -566,36 +566,36 @@ impl NostrApp {
         
         // タイムライン（中央）
         egui::CentralPanel::default().show(ctx, |ui| {
-            self.timeline.show(ui);
+            self.timeline.show(ui, &self.i18n);
         });
     }
     
     /// チャンネル作成ダイアログ
     fn show_channel_create_dialog(&mut self, ctx: &egui::Context) {
-        egui::Window::new("📢 新しいチャンネルを作成")
+        egui::Window::new(self.i18n.channel_create_title())
             .collapsible(false)
             .resizable(false)
             .default_width(400.0)
             .show(ctx, |ui| {
                 ui.vertical(|ui| {
-                    crate::emoji_label::emoji_label(ui, "チャンネル名:");
+                    crate::emoji_label::emoji_label(ui, self.i18n.channel_name_label());
                     ui.text_edit_singleline(&mut self.channel_name_input);
                     
                     ui.add_space(10.0);
                     
-                    crate::emoji_label::emoji_label(ui, "説明:");
+                    crate::emoji_label::emoji_label(ui, self.i18n.channel_about_label());
                     ui.text_edit_multiline(&mut self.channel_about_input);
                     
                     ui.add_space(20.0);
                     
                     ui.horizontal(|ui| {
-                        if ui.button("✖ キャンセル").clicked() {
+                        if ui.button(self.i18n.button_cancel()).clicked() {
                             self.show_channel_create = false;
                             self.channel_name_input.clear();
                             self.channel_about_input.clear();
                         }
                         
-                        if ui.button("✅ 作成").clicked() {
+                        if ui.button(self.i18n.button_create()).clicked() {
                             if !self.channel_name_input.is_empty() {
                                 self.create_new_channel();
                             }

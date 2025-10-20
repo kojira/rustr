@@ -1,4 +1,5 @@
 use crate::font_config::{FontConfig, FontFamily};
+use crate::i18n::{I18n, Language};
 
 /// 設定画面
 pub struct SettingsView {
@@ -15,17 +16,38 @@ impl SettingsView {
     }
 
     /// 設定画面を表示
-    pub fn show(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
-        crate::emoji_label::emoji_heading(ui, "⚙️ 設定");
+    pub fn show(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, i18n: &mut I18n) {
+        crate::emoji_label::emoji_heading(ui, i18n.settings_title());
         ui.add_space(20.0);
 
+        // 言語設定
         ui.group(|ui| {
-            crate::emoji_label::emoji_label(ui, "🔤 フォント設定");
+            crate::emoji_label::emoji_label(ui, i18n.settings_language());
+            ui.add_space(10.0);
+
+            let current_lang = i18n.language();
+            let mut selected_lang = *i18n.language();
+            egui::ComboBox::from_label("")
+                .selected_text(selected_lang.name())
+                .show_ui(ui, |ui| {
+                    for lang in Language::all() {
+                        if ui.selectable_value(&mut selected_lang, *lang, lang.name()).clicked() {
+                            i18n.set_language(*lang);
+                        }
+                    }
+                });
+        });
+
+        ui.add_space(20.0);
+
+        // フォント設定
+        ui.group(|ui| {
+            crate::emoji_label::emoji_label(ui, i18n.settings_font());
             ui.add_space(10.0);
 
             let current_font = self.font_config.font_family;
 
-            egui::ComboBox::from_label("フォントファミリー")
+            egui::ComboBox::from_label(i18n.settings_font_family())
                 .selected_text(current_font.name())
                 .show_ui(ui, |ui| {
                     for font in FontFamily::all() {
@@ -42,10 +64,10 @@ impl SettingsView {
 
             if self.font_changed {
                 ui.add_space(10.0);
-                let warning_text = egui::RichText::new("⚠️ フォント変更を適用するには再起動が必要です").color(egui::Color32::YELLOW);
+                let warning_text = egui::RichText::new(i18n.settings_restart_required()).color(egui::Color32::YELLOW);
                 crate::emoji_label::emoji_label(ui, warning_text);
 
-                if ui.button("💾 保存して再起動").clicked() {
+                if ui.button(i18n.settings_save_and_restart()).clicked() {
                     self.font_config.save();
                     // ページをリロード
                     if let Some(window) = web_sys::window() {
@@ -58,7 +80,7 @@ impl SettingsView {
         ui.add_space(20.0);
 
         ui.group(|ui| {
-            crate::emoji_label::emoji_label(ui, "ℹ️ フォント情報");
+            crate::emoji_label::emoji_label(ui, i18n.settings_font_info());
             ui.add_space(10.0);
 
             match self.font_config.font_family {
@@ -80,13 +102,13 @@ impl SettingsView {
 
         // フォントプレビュー
         ui.group(|ui| {
-            crate::emoji_label::emoji_label(ui, "📝 プレビュー");
+            crate::emoji_label::emoji_label(ui, i18n.settings_font_preview());
             ui.add_space(10.0);
 
-            crate::emoji_label::emoji_label(ui, "日本語: こんにちは、世界！");
-            crate::emoji_label::emoji_label(ui, "English: Hello, World!");
-            crate::emoji_label::emoji_label(ui, "絵文字: 🎉 🚀 ✨ 💡 🔥");
-            crate::emoji_label::emoji_label(ui, "数字: 0123456789");
+            crate::emoji_label::emoji_label(ui, i18n.settings_preview_japanese());
+            crate::emoji_label::emoji_label(ui, i18n.settings_preview_english());
+            crate::emoji_label::emoji_label(ui, i18n.settings_preview_emoji());
+            crate::emoji_label::emoji_label(ui, i18n.settings_preview_numbers());
         });
     }
 

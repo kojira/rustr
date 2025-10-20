@@ -1,40 +1,28 @@
 use eframe::egui;
 use core::types::UiRow;
+use crate::i18n::I18n;
 
 /// タイムライン表示
 pub struct Timeline {
-    events: Vec<TimelineEvent>,
-    scroll_offset: f32,
-}
-
-#[derive(Clone)]
-struct TimelineEvent {
-    id: String,
-    pubkey: String,
-    content: String,
-    created_at: i64,
-    kind: u16,
+    events: Vec<UiRow>,
 }
 
 impl Timeline {
     pub fn new() -> Self {
         Self {
             events: Vec::new(),
-            scroll_offset: 0.0,
         }
     }
     
-    /// チャンネルのイベントを読み込み
-    pub fn load_channel(&mut self, channel_id: &str) {
-        log::info!("Loading channel: {}", channel_id);
-        // イベントをクリア（実データはadd_eventで追加される）
-        self.events.clear();
-    }
-    
-    /// DMのイベントを読み込み
-    pub fn load_dm(&mut self, peer: &str) {
-        log::info!("Loading DM with: {}", peer);
-        self.events.clear();
+    /// イベントを追加
+    pub fn add_event(&mut self, event: UiRow) {
+        // 新しいイベントを先頭に追加（最新が上）
+        self.events.insert(0, event);
+        
+        // 最大1000件まで保持
+        if self.events.len() > 1000 {
+            self.events.truncate(1000);
+        }
     }
     
     /// イベント数を取得
@@ -42,44 +30,37 @@ impl Timeline {
         self.events.len()
     }
     
-    /// イベントを追加
-    pub fn add_event(&mut self, ui_row: UiRow) {
-        let event = TimelineEvent {
-            id: ui_row.id,
-            pubkey: ui_row.pubkey,
-            content: ui_row.content,
-            created_at: ui_row.created_at,
-            kind: ui_row.kind,
-        };
-        
-        // 重複チェック
-        if !self.events.iter().any(|e| e.id == event.id) {
-            self.events.push(event);
-            // created_atで降順ソート（新しいものが上）
-            self.events.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        }
+    /// チャンネルを読み込み（イベントをクリア）
+    pub fn load_channel(&mut self, _channel_id: &str) {
+        self.events.clear();
+    }
+    
+    /// DMを読み込み（イベントをクリア）
+    pub fn load_dm(&mut self, _peer: &str) {
+        self.events.clear();
     }
     
     /// タイムライン表示
-    pub fn show(&mut self, ui: &mut egui::Ui) {
+    pub fn show(&mut self, ui: &mut egui::Ui, i18n: &I18n) {
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 if self.events.is_empty() {
                     ui.centered_and_justified(|ui| {
-                        crate::emoji_label::emoji_label(ui, "No events yet. Start a conversation!");
+                        crate::emoji_label::emoji_label(ui, i18n.timeline_empty());
                     });
                     return;
                 }
                 
                 for event in &self.events {
-                    self.show_event(ui, event);
+                    self.show_event(ui, event, i18n);
                     ui.separator();
                 }
             });
     }
     
-    fn show_event(&self, ui: &mut egui::Ui, event: &TimelineEvent) {
+    /// 個別イベント表示
+    fn show_event(&self, ui: &mut egui::Ui, event: &UiRow, i18n: &I18n) {
         ui.horizontal(|ui| {
             // アバター（仮）
             crate::emoji_label::emoji_label(ui, "👤");
@@ -97,11 +78,11 @@ impl Timeline {
                 
                 // アクション
                 ui.horizontal(|ui| {
-                    if ui.small_button("↩ Reply").clicked() {
-                        log::info!("Reply to {}", event.id);
+                    if ui.button(i18n.timeline_reply()).clicked() {
+                        log::info!("Reply to event");
                     }
-                    if ui.small_button("♥ Like").clicked() {
-                        log::info!("Like {}", event.id);
+                    if ui.button(i18n.timeline_like()).clicked() {
+                        log::info!("Like event");
                     }
                 });
             });
@@ -109,9 +90,10 @@ impl Timeline {
     }
 }
 
-fn format_timestamp(ts: i64) -> String {
+/// タイムスタンプをフォーマット
+fn format_timestamp(timestamp: i64) -> String {
     let now = js_sys::Date::now() / 1000.0;
-    let diff = now as i64 - ts;
+    let diff = (now as i64 - timestamp).abs() as u64;
     
     if diff < 60 {
         format!("{}s ago", diff)
