@@ -47,7 +47,7 @@ impl ExponentialBackoff {
 pub struct RelayConnection {
     pub url: String,
     ws: Option<WebSocket>,
-    state: ConnectionState,
+    state: Rc<RefCell<ConnectionState>>,
     backoff: ExponentialBackoff,
     subscriptions: HashMap<String, String>, // sub_id -> filter_json
     eose_received: HashSet<String>,
@@ -65,7 +65,7 @@ impl RelayConnection {
         Self {
             url,
             ws: None,
-            state: ConnectionState::Disconnected,
+            state: Rc::new(RefCell::new(ConnectionState::Disconnected)),
             backoff: ExponentialBackoff::new(),
             subscriptions: HashMap::new(),
             eose_received: HashSet::new(),
@@ -79,27 +79,28 @@ impl RelayConnection {
     }
 
     pub fn state(&self) -> ConnectionState {
-        self.state
+        *self.state.borrow()
     }
 
     pub fn is_connected(&self) -> bool {
-        self.state == ConnectionState::Connected
+        *self.state.borrow() == ConnectionState::Connected
     }
 
     /// 接続試行
     pub async fn connect(&mut self) -> Result<()> {
-        if self.state == ConnectionState::Connecting || self.state == ConnectionState::Connected {
+        let current_state = *self.state.borrow();
+        if current_state == ConnectionState::Connecting || current_state == ConnectionState::Connected {
             return Ok(());
         }
 
-        self.state = ConnectionState::Connecting;
+        *self.state.borrow_mut() = ConnectionState::Connecting;
         self.last_connect_attempt = now();
 
         let ws = WebSocket::new(&self.url)?;
         ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
-        // 状態を共有するためのRc<RefCell<>>
-        let state = Rc::new(RefCell::new(self.state));
+        // 状態を共有
+        let state = self.state.clone();
         let message_queue = self.message_queue.clone();
         let url = self.url.clone();
 
@@ -163,7 +164,7 @@ impl RelayConnection {
     /// メッセージ送信
     pub async fn send(&self, msg: &str) -> Result<()> {
         if let Some(ws) = &self.ws {
-            if self.state == ConnectionState::Connected {
+            if *self.state.borrow() == ConnectionState::Connected {
                 ws.send_with_str(msg)?;
             }
         }
@@ -197,7 +198,7 @@ impl RelayConnection {
 
     /// 再接続が必要か
     pub fn needs_reconnect(&self) -> bool {
-        if self.state == ConnectionState::Connected {
+        if *self.state.borrow() == ConnectionState::Connected {
             return false;
         }
 
@@ -218,21 +219,21 @@ impl RelayConnection {
     /// 接続成功時の処理
     pub fn on_open(&mut self) {
         log::info!("Connected to {}", self.url);
-        self.state = ConnectionState::Connected;
+        *self.state.borrow_mut() = ConnectionState::Connected;
         self.backoff.reset();
     }
 
     /// 切断時の処理
     pub fn on_close(&mut self) {
         log::info!("Disconnected from {}", self.url);
-        self.state = ConnectionState::Disconnected;
+        *self.state.borrow_mut() = ConnectionState::Disconnected;
         self.ws = None;
     }
 
     /// エラー時の処理
     pub fn on_error(&mut self, error: &str) {
         log::error!("WebSocket error on {}: {}", self.url, error);
-        self.state = ConnectionState::Disconnected;
+        *self.state.borrow_mut() = ConnectionState::Disconnected;
     }
 }
 

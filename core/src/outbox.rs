@@ -54,7 +54,23 @@ impl OutboxQueue {
     pub async fn dequeue(&mut self) -> Result<Option<String>> {
         if let Some(item) = self.pending.front() {
             if item.status == OutboxStatus::Queued {
-                return Ok(Some(item.event_json.clone()));
+                let event_json = item.event_json.clone();
+                let req_id = item.req_id.clone();
+                
+                // 送信済みステータスに変更（OKレスポンス待ち）
+                if let Some(item) = self.pending.front_mut() {
+                    item.status = OutboxStatus::Sent;
+                    item.last_try_at = current_timestamp();
+                }
+                
+                // IndexedDBも更新
+                self.storage.update_outbox_status(&req_id, OutboxStatus::Sent).await
+                    .map_err(|e| {
+                        log::error!("dequeue: Failed to update outbox status for {}: {:?}", req_id, e);
+                        e
+                    })?;
+                
+                return Ok(Some(event_json));
             }
         }
         Ok(None)
@@ -127,9 +143,12 @@ impl OutboxQueue {
 
         if let Some(req_id) = found_req_id {
             if accepted {
-                // 成功: キューから削除
+                // 成功: ストレージから削除してからキューから削除
+                // 順序を逆にしてエラーを防ぐ
+                if let Err(e) = self.storage.update_outbox_status(&req_id, OutboxStatus::Ok).await {
+                    log::warn!("Failed to update outbox status: {:?}", e);
+                }
                 self.pending.retain(|item| item.req_id != req_id);
-                self.storage.update_outbox_status(&req_id, OutboxStatus::Ok).await?;
                 log::info!("Event {} accepted", event_id);
             } else {
                 // 拒否: エラーとしてマーク
@@ -137,7 +156,9 @@ impl OutboxQueue {
                     item.status = OutboxStatus::Error;
                     item.error = Some(message.to_string());
                 }
-                self.storage.update_outbox_status(&req_id, OutboxStatus::Error).await?;
+                if let Err(e) = self.storage.update_outbox_status(&req_id, OutboxStatus::Error).await {
+                    log::warn!("Failed to update outbox status: {:?}", e);
+                }
                 log::warn!("Event {} rejected: {}", event_id, message);
             }
         }

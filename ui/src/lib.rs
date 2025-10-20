@@ -44,6 +44,17 @@ pub async fn start_app(canvas_id: String) -> Result<(), JsValue> {
             canvas,
             web_options,
             Box::new(|cc| {
+                // 日本語フォントを設定
+                let mut fonts = egui::FontDefinitions::default();
+                
+                // eGuiに含まれる日本語フォントを優先的に使用
+                fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap()
+                    .insert(0, "NotoSansJP-Regular".to_owned());
+                fonts.families.get_mut(&egui::FontFamily::Monospace).unwrap()
+                    .insert(0, "NotoSansJP-Regular".to_owned());
+                
+                cc.egui_ctx.set_fonts(fonts);
+                
                 // フォントサイズを大きくする
                 let mut style = (*cc.egui_ctx.style()).clone();
                 style.text_styles = [

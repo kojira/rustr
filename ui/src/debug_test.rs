@@ -15,6 +15,10 @@ pub enum TestStep {
     OnboardingCreateKey,
     /// メイン画面に遷移
     TransitionToMain,
+    /// チャンネル作成
+    CreateChannel { name: String, about: String },
+    /// チャンネル作成完了待ち
+    WaitForChannelCreation,
     /// チャンネルを開く
     OpenChannel { channel_id: String },
     /// メッセージ送信
@@ -34,9 +38,10 @@ pub struct DebugTestRunner {
     enabled: bool,
     current_step: TestStep,
     step_index: usize,
-    frame_counter: u32,
-    wait_frames: u32,
+    pub frame_counter: u32,
+    pub wait_frames: u32,
     scenario: Vec<TestStep>,
+    pub created_channel_id: Option<String>,
 }
 
 impl DebugTestRunner {
@@ -46,8 +51,13 @@ impl DebugTestRunner {
             TestStep::Idle,
             TestStep::OnboardingCreateKey,
             TestStep::TransitionToMain,
+            TestStep::CreateChannel {
+                name: "🧪 Test Channel".to_string(),
+                about: "Automated test channel".to_string(),
+            },
+            TestStep::WaitForChannelCreation,
             TestStep::OpenChannel { 
-                channel_id: "test_channel_001".to_string() 
+                channel_id: String::new() // 作成後に設定される
             },
             TestStep::SendMessage { 
                 content: "🤖 自動テスト: Hello from debug mode!".to_string() 
@@ -63,6 +73,7 @@ impl DebugTestRunner {
             frame_counter: 0,
             wait_frames: 60, // 1秒待機（60fps想定）
             scenario,
+            created_channel_id: None,
         }
     }
 
@@ -77,7 +88,7 @@ impl DebugTestRunner {
     }
 
     /// 次のステップへ進む
-    fn advance_step(&mut self) {
+    pub fn advance_step(&mut self) {
         self.step_index += 1;
         if self.step_index < self.scenario.len() {
             self.current_step = self.scenario[self.step_index].clone();
@@ -90,80 +101,6 @@ impl DebugTestRunner {
         } else {
             self.current_step = TestStep::Completed;
             log::info!("✅ All test steps completed!");
-        }
-    }
-
-    /// フレーム更新（毎フレーム呼ばれる）
-    pub fn tick(&mut self, app: &mut NostrApp) {
-        if !self.enabled || self.current_step == TestStep::Completed {
-            return;
-        }
-
-        self.frame_counter += 1;
-
-        // 待機フレーム数に達したら次のステップを実行
-        if self.frame_counter < self.wait_frames {
-            return;
-        }
-
-        match &self.current_step {
-            TestStep::Idle => {
-                log::info!("🧪 Starting debug test scenario...");
-                self.advance_step();
-            }
-            
-            TestStep::OnboardingCreateKey => {
-                log::info!("🧪 Simulating: Create new key");
-                // オンボーディングをスキップしてメイン画面へ
-                app.debug_skip_onboarding();
-                self.advance_step();
-            }
-            
-            TestStep::TransitionToMain => {
-                log::info!("🧪 Verifying: Main screen loaded");
-                if app.is_main_screen() {
-                    log::info!("✅ Main screen is active");
-                    self.advance_step();
-                } else {
-                    log::warn!("⏳ Waiting for main screen...");
-                }
-            }
-            
-            TestStep::OpenChannel { channel_id } => {
-                log::info!("🧪 Opening channel: {}", channel_id);
-                app.debug_open_channel(channel_id.clone());
-                self.advance_step();
-            }
-            
-            TestStep::SendMessage { content } => {
-                log::info!("🧪 Sending message: {}", content);
-                app.debug_send_message(content.clone());
-                self.advance_step();
-            }
-            
-            TestStep::VerifyTimeline => {
-                log::info!("🧪 Verifying timeline...");
-                let event_count = app.debug_get_timeline_count();
-                log::info!("📊 Timeline has {} events", event_count);
-                self.wait_frames = 180; // 3秒待機してから次へ
-                self.advance_step();
-            }
-            
-            TestStep::OpenDm { peer } => {
-                log::info!("🧪 Opening DM with: {}", peer);
-                app.debug_open_dm(peer.clone());
-                self.advance_step();
-            }
-            
-            TestStep::SendDm { content } => {
-                log::info!("🧪 Sending DM: {}", content);
-                app.debug_send_message(content.clone());
-                self.advance_step();
-            }
-            
-            TestStep::Completed => {
-                // 何もしない
-            }
         }
     }
 

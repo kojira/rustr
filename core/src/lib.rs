@@ -107,14 +107,44 @@ impl CoreHandle {
         Ok(())
     }
 
+    /// チャンネル作成 (NIP-28)
+    pub async fn create_channel(&mut self, name: &str, about: &str, picture: &str) -> Result<String> {
+        let signer = self.signer.as_ref()
+            .ok_or_else(|| CoreError::Other("No signer available".to_string()))?;
+        
+        // NIP-28: チャンネル作成 (kind 40)
+        let content = serde_json::json!({
+            "name": name,
+            "about": about,
+            "picture": picture,
+        }).to_string();
+        
+        let unsigned_event = crate::signer::UnsignedEvent {
+            kind: 40,
+            content,
+            tags: vec![],
+            created_at: (js_sys::Date::now() / 1000.0) as i64,
+        };
+        
+        let signed_event = signer.sign_event(unsigned_event).await?;
+        let event_id = signed_event.id.clone();
+        let event_json = signed_event.to_json();
+        
+        // Outboxキューに追加
+        self.outbox.enqueue(event_json).await?;
+        
+        Ok(event_id)
+    }
+
     /// パブリックメッセージ送信
     pub async fn send_public(&mut self, channel_id: &str, content: &str) -> Result<String> {
         let signer = self.signer.as_ref()
             .ok_or_else(|| CoreError::Other("No signer available".to_string()))?;
         
         // NIP-28: チャンネルメッセージ (kind 42)
+        // eタグ: ["e", <32-bytes lowercase hex of the id of another event>, <recommended relay URL, optional>]
         let tags = vec![
-            vec!["e".to_string(), channel_id.to_string(), "".to_string(), "root".to_string()],
+            vec!["e".to_string(), channel_id.to_string()],
         ];
         
         let unsigned_event = crate::signer::UnsignedEvent {
@@ -192,17 +222,33 @@ impl CoreHandle {
             all_messages.extend(relay.drain_messages());
         }
         for msg in all_messages {
-            self.process_relay_message(msg).await?;
+            self.process_relay_message(msg).await
+                .map_err(|e| {
+                    log::error!("tick: Error processing relay message: {:?}", e);
+                    e
+                })?;
         }
 
         // Outbox処理（送信キューからイベントを取り出して送信）
-        if let Some(event) = self.outbox.dequeue().await? {
-            let event_json = serde_json::to_string(&event)
-                .map_err(|e| CoreError::ParseError(e.to_string()))?;
-            let msg = format!(r#"["EVENT",{}]"#, event_json);
-            
-            for relay in &self.relays {
-                let _ = relay.send(&msg).await;
+        match self.outbox.dequeue().await {
+            Ok(Some(event_json)) => {
+                let msg = format!(r#"["EVENT",{}]"#, event_json);
+                log::info!("Sending EVENT to relays: {}", msg);
+                
+                for relay in &self.relays {
+                    if let Err(e) = relay.send(&msg).await {
+                        log::error!("Failed to send to relay {}: {:?}", relay.url, e);
+                    } else {
+                        log::info!("Sent to relay: {}", relay.url);
+                    }
+                }
+            }
+            Ok(None) => {
+                // キューが空の場合は何もしない
+            }
+            Err(e) => {
+                log::error!("tick: Error in outbox.dequeue(): {:?}", e);
+                return Err(e);
             }
         }
 
@@ -256,8 +302,12 @@ impl CoreHandle {
             RelayMessage::Ok { event_id, accepted, message } => {
                 if accepted {
                     log::info!("Event {} accepted", event_id);
+                    // Outboxから削除
+                    self.outbox.on_ok(&event_id, true, "").await?;
                 } else {
                     log::warn!("Event {} rejected: {}", event_id, message);
+                    // エラーステータスに変更
+                    self.outbox.on_ok(&event_id, false, &message).await?;
                 }
             }
             RelayMessage::Notice { message } => {

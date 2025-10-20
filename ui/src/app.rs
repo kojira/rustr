@@ -131,9 +131,9 @@ impl NostrApp {
         
         // デフォルトRelay一覧
         let relay_urls = vec![
-            "wss://relay.damus.io".to_string(),
-            "wss://nos.lol".to_string(),
-            "wss://relay.nostr.band".to_string(),
+            "wss://x.kojira.io".to_string(),
+            "wss://yabu.me".to_string(),
+            "wss://r.kojira.io".to_string(),
         ];
         
         // CoreHandle初期化
@@ -227,24 +227,28 @@ impl NostrApp {
 
     /// 定期処理（tick）
     fn tick(&mut self) {
-        let core_ref = self.core.clone();
+        // try_borrow_mut()を使って、借用できない場合はスキップ
+        if let Ok(mut core_borrow) = self.core.try_borrow_mut() {
+            if let Some(core) = core_borrow.as_mut() {
+                // poll_eventsを実行
+                let events = core.poll_events(50);
+                for event in events {
+                    self.timeline.add_event(event);
+                }
+            }
+        }
         
-        // CoreHandleのtick()を非同期で呼び出し
+        // 非同期でtick()を実行（借用できない場合はスキップ）
+        let core_ref = self.core.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            if let Some(core) = core_ref.borrow_mut().as_mut() {
-                if let Err(e) = core.tick().await {
-                    log::error!("Tick error: {:?}", e);
+            if let Ok(mut core_borrow) = core_ref.try_borrow_mut() {
+                if let Some(core) = core_borrow.as_mut() {
+                    if let Err(e) = core.tick().await {
+                        log::error!("Tick error: {:?}", e);
+                    }
                 }
             }
         });
-        
-        // poll_events()でUIイベントを取得してタイムラインに渡す
-        if let Some(core) = self.core.borrow_mut().as_mut() {
-            let events = core.poll_events(50);
-            for event in events {
-                self.timeline.add_event(event);
-            }
-        }
     }
     
     // === デバッグAPI ===
@@ -281,22 +285,170 @@ impl NostrApp {
     pub fn debug_get_timeline_count(&self) -> usize {
         self.timeline.event_count()
     }
+    
+    #[cfg(feature = "debug-test")]
+    pub fn debug_create_channel(&mut self, name: String, about: String) {
+        let core_ref = self.core.clone();
+        
+        wasm_bindgen_futures::spawn_local(async move {
+            if let Ok(mut core_borrow) = core_ref.try_borrow_mut() {
+                if let Some(core) = core_borrow.as_mut() {
+                    match core.create_channel(&name, &about, "").await {
+                        Ok(id) => {
+                            log::info!("✅ Channel created: {}", id);
+                            // チャンネルIDをローカルストレージに保存
+                            if let Some(window) = web_sys::window() {
+                                if let Ok(Some(storage)) = window.local_storage() {
+                                    let _ = storage.set_item("debug_channel_id", &id);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            log::error!("Failed to create channel: {:?}", e);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    #[cfg(feature = "debug-test")]
+    pub fn debug_get_channel_id(&self) -> Option<String> {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(id)) = storage.get_item("debug_channel_id") {
+                    return Some(id);
+                }
+            }
+        }
+        None
+    }
+    
+    #[cfg(feature = "debug-test")]
+    fn execute_debug_step(&mut self, step: &crate::debug_test::TestStep) {
+        use crate::debug_test::TestStep;
+        
+        match step {
+            TestStep::Idle => {
+                log::info!("🧪 Starting debug test scenario...");
+                self.debug_test.advance_step();
+            }
+            
+            TestStep::OnboardingCreateKey => {
+                log::info!("🧪 Simulating: Create new key");
+                self.debug_skip_onboarding();
+                self.debug_test.advance_step();
+            }
+            
+            TestStep::TransitionToMain => {
+                log::info!("🧪 Verifying: Main screen loaded");
+                if self.is_main_screen() {
+                    log::info!("✅ Main screen is active");
+                    self.debug_test.advance_step();
+                } else {
+                    log::warn!("⏳ Waiting for main screen...");
+                }
+            }
+            
+            TestStep::CreateChannel { name, about } => {
+                // 既存のチャンネルIDがあれば再利用
+                if let Some(existing_id) = self.debug_get_channel_id() {
+                    log::info!("♻️  Reusing existing channel: {}", existing_id);
+                    self.debug_test.advance_step();
+                } else {
+                    log::info!("🧪 Creating new channel: {}", name);
+                    self.debug_create_channel(name.clone(), about.clone());
+                    self.debug_test.wait_frames = 120; // 2秒待機
+                    self.debug_test.advance_step();
+                }
+            }
+            
+            TestStep::WaitForChannelCreation => {
+                // OKレスポンスを待つ（実際にはevent_bufferから取得すべき）
+                log::info!("⏳ Waiting for channel creation...");
+                // 簡易実装: 一定時間待機後に次へ
+                self.debug_test.advance_step();
+            }
+            
+            TestStep::OpenChannel { channel_id } => {
+                // ローカルストレージからチャンネルIDを取得
+                let actual_channel_id = if channel_id.is_empty() {
+                    self.debug_get_channel_id().unwrap_or_default()
+                } else {
+                    channel_id.clone()
+                };
+                
+                if !actual_channel_id.is_empty() {
+                    log::info!("🧪 Opening channel: {}", actual_channel_id);
+                    self.debug_open_channel(actual_channel_id);
+                    self.debug_test.advance_step();
+                } else {
+                    log::warn!("⏳ Waiting for channel ID...");
+                }
+            }
+            
+            TestStep::SendMessage { content } => {
+                log::info!("🧪 Sending message: {}", content);
+                self.debug_send_message(content.clone());
+                self.debug_test.advance_step();
+            }
+            
+            TestStep::VerifyTimeline => {
+                log::info!("🧪 Verifying timeline...");
+                let event_count = self.debug_get_timeline_count();
+                log::info!("📊 Timeline has {} events", event_count);
+                self.debug_test.wait_frames = 180;
+                self.debug_test.advance_step();
+            }
+            
+            TestStep::OpenDm { peer } => {
+                log::info!("🧪 Opening DM with: {}", peer);
+                self.debug_open_dm(peer.clone());
+                self.debug_test.advance_step();
+            }
+            
+            TestStep::SendDm { content } => {
+                log::info!("🧪 Sending DM: {}", content);
+                self.debug_send_message(content.clone());
+                self.debug_test.advance_step();
+            }
+            
+            TestStep::Completed => {
+                // 何もしない
+            }
+        }
+    }
 }
 
 impl eframe::App for NostrApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // デバッグテストの実行
         #[cfg(feature = "debug-test")]
-        if self.debug_test.is_enabled() {
-            self.debug_test.tick(self);
-            
-            // デバッグ情報を画面上部に表示
-            egui::TopBottomPanel::top("debug_test_status").show(ctx, |ui| {
-                ui.colored_label(
-                    egui::Color32::from_rgb(255, 200, 0),
-                    self.debug_test.get_status_text()
-                );
-            });
+        {
+            let should_run = self.debug_test.is_enabled();
+            if should_run {
+                // debug_testの状態を取得してからappを操作
+                let current_step = self.debug_test.current_step().clone();
+                let frame_counter = self.debug_test.frame_counter;
+                let wait_frames = self.debug_test.wait_frames;
+                
+                // フレームカウンターを更新
+                self.debug_test.frame_counter += 1;
+                
+                // 待機フレーム数に達したらステップを実行
+                if frame_counter >= wait_frames {
+                    self.execute_debug_step(&current_step);
+                }
+                
+                // デバッグ情報を画面上部に表示
+                let status_text = self.debug_test.get_status_text();
+                egui::TopBottomPanel::top("debug_test_status").show(ctx, |ui| {
+                    ui.colored_label(
+                        egui::Color32::from_rgb(255, 200, 0),
+                        status_text
+                    );
+                });
+            }
         }
         
         match self.state {

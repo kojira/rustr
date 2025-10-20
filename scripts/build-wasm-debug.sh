@@ -11,7 +11,6 @@ AR=/opt/homebrew/opt/llvm/bin/llvm-ar \
 wasm-pack build \
   --target web \
   --out-dir pkg \
-  --features debug-test \
   -- --features debug-test
 
 # 静的ファイルをコピー
