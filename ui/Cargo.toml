@@ -24,6 +24,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 hex = { workspace = true }
 
+[features]
+debug-test = []
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 

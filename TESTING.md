@@ -45,7 +45,63 @@ wasm-pack test --headless --chrome
 - **現在は`secp256k1`のビルド問題により実行不可**
 - 将来的にはCI/CD環境（GitHub Actions）で実行予定
 
-## 3. 手動E2Eテスト
+## 3. デバッグテストモード（自動E2Eテスト）
+
+### 概要
+
+アプリ起動時に自動でテストシナリオを実行するデバッグモードを提供しています。
+eGuiはcanvasベースなので通常のE2Eツールは使えませんが、アプリ内部にテストランナーを埋め込むことで、
+実際のブラウザ環境で自動テストを実行できます。
+
+### 実行方法
+
+```bash
+# デバッグテスト機能を有効にしてビルド
+./scripts/build-wasm-debug.sh
+
+# 開発サーバーを起動
+cd ui/pkg
+python3 -m http.server 8080
+
+# ブラウザで開く（URLパラメータでデバッグモード有効化）
+# http://localhost:8080/?debug_test=1
+```
+
+### 自動実行されるシナリオ
+
+1. **オンボーディングスキップ**: 新規キー生成で自動的にメイン画面へ
+2. **メイン画面確認**: 状態がMainになっているか確認
+3. **チャンネルオープン**: テストチャンネルを開く
+4. **メッセージ送信**: 自動テストメッセージを送信
+5. **タイムライン確認**: イベント数をログ出力
+6. **完了**: 全ステップ完了を表示
+
+### 実装詳細
+
+- `ui/src/debug_test.rs`: テストランナー本体
+- `ui/src/app.rs`: デバッグAPI（`debug_*`メソッド）
+- フレームごとに`tick()`が呼ばれ、ステップを進行
+- 画面上部に黄色いバーで進捗表示
+- ブラウザコンソールに詳細ログ出力
+
+### カスタマイズ
+
+`ui/src/debug_test.rs`の`scenario`配列を編集することで、
+独自のテストシナリオを追加できます：
+
+```rust
+let scenario = vec![
+    TestStep::Idle,
+    TestStep::OnboardingCreateKey,
+    TestStep::TransitionToMain,
+    TestStep::OpenChannel { channel_id: "my_channel".to_string() },
+    TestStep::SendMessage { content: "Test message".to_string() },
+    // 独自のステップを追加
+    TestStep::Completed,
+];
+```
+
+## 4. 手動E2Eテスト
 
 ### 実行方法
 
@@ -85,7 +141,7 @@ wasm-pack test --headless --chrome
 3. [ ] フォントサイズが適切
 4. [ ] スペーシングが適切
 
-## 4. CI/CD（GitHub Actions）
+## 5. CI/CD（GitHub Actions）
 
 ### 設定ファイル
 

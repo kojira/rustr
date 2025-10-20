@@ -3,6 +3,9 @@ mod timeline;
 mod composer;
 mod onboarding;
 
+#[cfg(feature = "debug-test")]
+mod debug_test;
+
 pub use app::NostrApp;
 
 use wasm_bindgen::prelude::*;

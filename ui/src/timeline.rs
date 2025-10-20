@@ -37,6 +37,11 @@ impl Timeline {
         self.events.clear();
     }
     
+    /// イベント数を取得
+    pub fn event_count(&self) -> usize {
+        self.events.len()
+    }
+    
     /// イベントを追加
     pub fn add_event(&mut self, ui_row: UiRow) {
         let event = TimelineEvent {

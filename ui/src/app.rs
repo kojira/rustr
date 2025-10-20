@@ -12,6 +12,9 @@ use crate::timeline::Timeline;
 use crate::composer::Composer;
 use crate::onboarding::{Onboarding, OnboardingResult};
 
+#[cfg(feature = "debug-test")]
+use crate::debug_test::{DebugTestRunner, is_debug_test_enabled};
+
 /// アプリケーションの状態
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AppState {
@@ -37,11 +40,23 @@ pub struct NostrApp {
     current_channel: Option<String>,
     current_dm_peer: Option<String>,
     error_message: Option<String>,
+    
+    // デバッグテスト
+    #[cfg(feature = "debug-test")]
+    debug_test: DebugTestRunner,
 }
 
 impl NostrApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let state = AppState::Onboarding;
+        
+        #[cfg(feature = "debug-test")]
+        let debug_test = DebugTestRunner::new(is_debug_test_enabled());
+        
+        #[cfg(feature = "debug-test")]
+        if debug_test.is_enabled() {
+            log::info!("🧪 Debug test mode enabled!");
+        }
         
         Self {
             state,
@@ -54,6 +69,8 @@ impl NostrApp {
             current_channel: None,
             current_dm_peer: None,
             error_message: None,
+            #[cfg(feature = "debug-test")]
+            debug_test,
         }
     }
     
@@ -229,10 +246,59 @@ impl NostrApp {
             }
         }
     }
+    
+    // === デバッグAPI ===
+    
+    #[cfg(feature = "debug-test")]
+    pub fn debug_skip_onboarding(&mut self) {
+        // 新規キー生成でオンボーディングをスキップ
+        self.complete_onboarding(OnboardingResult::CreateKey { 
+            passphrase: String::new() 
+        });
+    }
+    
+    #[cfg(feature = "debug-test")]
+    pub fn is_main_screen(&self) -> bool {
+        self.state == AppState::Main
+    }
+    
+    #[cfg(feature = "debug-test")]
+    pub fn debug_open_channel(&mut self, channel_id: String) {
+        self.open_channel(channel_id);
+    }
+    
+    #[cfg(feature = "debug-test")]
+    pub fn debug_open_dm(&mut self, peer: String) {
+        self.open_dm(peer);
+    }
+    
+    #[cfg(feature = "debug-test")]
+    pub fn debug_send_message(&mut self, content: String) {
+        self.send_message(content);
+    }
+    
+    #[cfg(feature = "debug-test")]
+    pub fn debug_get_timeline_count(&self) -> usize {
+        self.timeline.event_count()
+    }
 }
 
 impl eframe::App for NostrApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // デバッグテストの実行
+        #[cfg(feature = "debug-test")]
+        if self.debug_test.is_enabled() {
+            self.debug_test.tick(self);
+            
+            // デバッグ情報を画面上部に表示
+            egui::TopBottomPanel::top("debug_test_status").show(ctx, |ui| {
+                ui.colored_label(
+                    egui::Color32::from_rgb(255, 200, 0),
+                    self.debug_test.get_status_text()
+                );
+            });
+        }
+        
         match self.state {
             AppState::Onboarding => {
                 // オンボーディング画面
