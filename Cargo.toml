@@ -39,8 +39,8 @@ thiserror = "1"
 getrandom = { version = "0.2", features = ["js"] }
 
 # egui
-eframe = { version = "0.29", default-features = false, features = ["glow", "default_fonts"] }
-egui = "0.29"
+eframe = { version = "0.31", default-features = false, features = ["glow", "default_fonts"] }
+egui = "0.31"
 
 # Logging
 log = "0.4"

@@ -16,11 +16,11 @@ impl SettingsView {
 
     /// 設定画面を表示
     pub fn show(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
-        ui.heading("⚙️ 設定");
+        crate::emoji_label::emoji_heading(ui, "⚙️ 設定");
         ui.add_space(20.0);
 
         ui.group(|ui| {
-            ui.label("🔤 フォント設定");
+            crate::emoji_label::emoji_label(ui, "🔤 フォント設定");
             ui.add_space(10.0);
 
             let current_font = self.font_config.font_family;
@@ -42,10 +42,8 @@ impl SettingsView {
 
             if self.font_changed {
                 ui.add_space(10.0);
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    "⚠️ フォント変更を適用するには再起動が必要です",
-                );
+                let warning_text = egui::RichText::new("⚠️ フォント変更を適用するには再起動が必要です").color(egui::Color32::YELLOW);
+                crate::emoji_label::emoji_label(ui, warning_text);
 
                 if ui.button("💾 保存して再起動").clicked() {
                     self.font_config.save();
@@ -60,20 +58,20 @@ impl SettingsView {
         ui.add_space(20.0);
 
         ui.group(|ui| {
-            ui.label("ℹ️ フォント情報");
+            crate::emoji_label::emoji_label(ui, "ℹ️ フォント情報");
             ui.add_space(10.0);
 
             match self.font_config.font_family {
                 FontFamily::NotoSansJP => {
-                    ui.label("Noto Sans JP");
-                    ui.label("• 日本語完全対応");
-                    ui.label("• 絵文字対応");
-                    ui.label("• 読みやすいゴシック体");
+                    crate::emoji_label::emoji_label(ui, "Noto Sans JP");
+                    crate::emoji_label::emoji_label(ui, "• 日本語完全対応");
+                    crate::emoji_label::emoji_label(ui, "• 絵文字対応");
+                    crate::emoji_label::emoji_label(ui, "• 読みやすいゴシック体");
                 }
                 FontFamily::SystemDefault => {
-                    ui.label("System Default");
-                    ui.label("• システムのデフォルトフォント");
-                    ui.label("• 日本語は表示されない場合があります");
+                    crate::emoji_label::emoji_label(ui, "System Default");
+                    crate::emoji_label::emoji_label(ui, "• システムのデフォルトフォント");
+                    crate::emoji_label::emoji_label(ui, "• 日本語は表示されない場合があります");
                 }
             }
         });
@@ -82,13 +80,13 @@ impl SettingsView {
 
         // フォントプレビュー
         ui.group(|ui| {
-            ui.label("📝 プレビュー");
+            crate::emoji_label::emoji_label(ui, "📝 プレビュー");
             ui.add_space(10.0);
 
-            ui.label("日本語: こんにちは、世界！");
-            ui.label("English: Hello, World!");
-            ui.label("絵文字: 🎉 🚀 ✨ 💡 🔥");
-            ui.label("数字: 0123456789");
+            crate::emoji_label::emoji_label(ui, "日本語: こんにちは、世界！");
+            crate::emoji_label::emoji_label(ui, "English: Hello, World!");
+            crate::emoji_label::emoji_label(ui, "絵文字: 🎉 🚀 ✨ 💡 🔥");
+            crate::emoji_label::emoji_label(ui, "数字: 0123456789");
         });
     }
 
@@ -97,4 +95,3 @@ impl SettingsView {
         &self.font_config
     }
 }
-

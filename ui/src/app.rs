@@ -484,7 +484,7 @@ impl NostrApp {
         // トップバー
         egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("🦀 Rustr");
+                crate::emoji_label::emoji_heading(ui, "🦀 Rustr");
                 
                 ui.separator();
                 
@@ -496,7 +496,7 @@ impl NostrApp {
                     // デモ用：特定のpubkeyとのDMを開く
                     // 実装: StorageからDMスレッド一覧を取得して選択UI表示
                     log::info!("DM list feature - not yet implemented");
-                    ui.label("DM一覧機能は今後実装予定");
+                    crate::emoji_label::emoji_label(ui, "DM一覧機能は今後実装予定");
                 }
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -544,9 +544,9 @@ impl NostrApp {
                     
                     // 現在のチャンネル/DM表示
                     if let Some(channel) = &self.current_channel {
-                        ui.label(format!("📢 {}", channel));
+                        crate::emoji_label::emoji_label(ui, format!("📢 {}", channel));
                     } else if let Some(peer) = &self.current_dm_peer {
-                        ui.label(format!("💬 {}", peer));
+                        crate::emoji_label::emoji_label(ui, format!("💬 {}", peer));
                     }
                 });
             });

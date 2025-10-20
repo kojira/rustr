@@ -67,7 +67,7 @@ impl Timeline {
             .show(ui, |ui| {
                 if self.events.is_empty() {
                     ui.centered_and_justified(|ui| {
-                        ui.label("No events yet. Start a conversation!");
+                        crate::emoji_label::emoji_label(ui, "No events yet. Start a conversation!");
                     });
                     return;
                 }
@@ -82,17 +82,18 @@ impl Timeline {
     fn show_event(&self, ui: &mut egui::Ui, event: &TimelineEvent) {
         ui.horizontal(|ui| {
             // アバター（仮）
-            ui.label("👤");
+            crate::emoji_label::emoji_label(ui, "👤");
             
             ui.vertical(|ui| {
                 // ヘッダー（pubkey + 時刻）
                 ui.horizontal(|ui| {
-                    ui.strong(&event.pubkey);
-                    ui.label(format_timestamp(event.created_at));
+                    let pubkey_text = egui::RichText::new(&event.pubkey).strong();
+                    egui_twemoji::EmojiLabel::new(pubkey_text).show(ui);
+                    crate::emoji_label::emoji_label(ui, format_timestamp(event.created_at));
                 });
                 
-                // コンテンツ
-                ui.label(&event.content);
+                // コンテンツ（カラー絵文字対応）
+                crate::emoji_label::emoji_label(ui, &event.content);
                 
                 // アクション
                 ui.horizontal(|ui| {

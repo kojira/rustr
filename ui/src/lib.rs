@@ -4,6 +4,7 @@ mod composer;
 mod onboarding;
 mod font_config;
 mod settings;
+mod emoji_label;
 
 #[cfg(feature = "debug-test")]
 mod debug_test;
@@ -46,6 +47,9 @@ pub async fn start_app(canvas_id: String) -> Result<(), JsValue> {
             canvas,
             web_options,
             Box::new(|cc| {
+                // egui_extrasの画像ローダーをインストール（egui-twemojiに必要）
+                egui_extras::install_image_loaders(&cc.egui_ctx);
+                
                 // フォント設定を読み込んで適用
                 let font_config = crate::font_config::FontConfig::load();
                 font_config.apply_to_egui(&cc.egui_ctx);

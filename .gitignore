@@ -25,3 +25,6 @@ Thumbs.db
 # Node
 node_modules/
 
+# Playwright
+.playwright-mcp/
+

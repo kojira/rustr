@@ -59,9 +59,9 @@ impl Onboarding {
     fn show_welcome(&mut self, ui: &mut egui::Ui) {
         ui.vertical_centered(|ui| {
             ui.add_space(100.0);
-            ui.heading("🦀 Welcome to Rustr");
+            crate::emoji_label::emoji_heading(ui, "🦀 Welcome to Rustr");
             ui.add_space(20.0);
-            ui.label("A decentralized Nostr client built with Rust and egui");
+            crate::emoji_label::emoji_label(ui, "A decentralized Nostr client built with Rust and egui");
             ui.add_space(40.0);
             
             if ui.button("Get Started →").clicked() {
@@ -75,7 +75,7 @@ impl Onboarding {
         
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
-            ui.heading("Choose Your Signer");
+            crate::emoji_label::emoji_heading(ui, "Choose Your Signer");
             ui.add_space(20.0);
             
             ui.group(|ui| {
@@ -101,7 +101,8 @@ impl Onboarding {
             
             if let Some(error) = &self.error_message {
                 ui.add_space(20.0);
-                ui.colored_label(egui::Color32::RED, error);
+                let error_text = egui::RichText::new(error).color(egui::Color32::RED);
+                crate::emoji_label::emoji_label(ui, error_text);
             }
         });
         
@@ -113,18 +114,18 @@ impl Onboarding {
         
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
-            ui.heading("Import Your Key");
+            crate::emoji_label::emoji_heading(ui, "Import Your Key");
             ui.add_space(20.0);
             
             ui.group(|ui| {
                 ui.set_min_width(400.0);
                 
-                ui.label("Enter your nsec (private key):");
+                crate::emoji_label::emoji_label(ui, "Enter your nsec (private key):");
                 ui.text_edit_singleline(&mut self.nsec_input);
                 
                 ui.add_space(10.0);
                 
-                ui.label("Passphrase (for encryption):");
+                crate::emoji_label::emoji_label(ui, "Passphrase (for encryption):");
                 ui.add(egui::TextEdit::singleline(&mut self.passphrase_input).password(true));
                 
                 ui.add_space(20.0);
@@ -151,7 +152,8 @@ impl Onboarding {
             
             if let Some(error) = &self.error_message {
                 ui.add_space(20.0);
-                ui.colored_label(egui::Color32::RED, error);
+                let error_text = egui::RichText::new(error).color(egui::Color32::RED);
+                crate::emoji_label::emoji_label(ui, error_text);
             }
         });
         
@@ -163,19 +165,19 @@ impl Onboarding {
         
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
-            ui.heading("Create New Key");
+            crate::emoji_label::emoji_heading(ui, "Create New Key");
             ui.add_space(20.0);
             
             ui.group(|ui| {
                 ui.set_min_width(400.0);
                 
-                ui.label("Set a passphrase to encrypt your key:");
+                crate::emoji_label::emoji_label(ui, "Set a passphrase to encrypt your key:");
                 ui.add(egui::TextEdit::singleline(&mut self.passphrase_input).password(true));
                 
                 ui.add_space(10.0);
                 
-                ui.label("⚠ Important: Save your passphrase securely!");
-                ui.label("You'll need it to access your account.");
+                crate::emoji_label::emoji_label(ui, "⚠ Important: Save your passphrase securely!");
+                crate::emoji_label::emoji_label(ui, "You'll need it to access your account.");
                 
                 ui.add_space(20.0);
                 
@@ -200,7 +202,8 @@ impl Onboarding {
             
             if let Some(error) = &self.error_message {
                 ui.add_space(20.0);
-                ui.colored_label(egui::Color32::RED, error);
+                let error_text = egui::RichText::new(error).color(egui::Color32::RED);
+                crate::emoji_label::emoji_label(ui, error_text);
             }
         });
         

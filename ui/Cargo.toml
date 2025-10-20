@@ -13,6 +13,9 @@ core = { path = "../core" }
 
 eframe = { workspace = true, features = ["glow"] }
 egui = { workspace = true }
+egui_extras = { version = "0.31", features = ["image"] }
+egui-twemoji = { version = "0.7.1", default-features = false, features = ["png"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
 wasm-bindgen = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
 web-sys = { workspace = true, features = ["Window", "Document", "HtmlCanvasElement"] }

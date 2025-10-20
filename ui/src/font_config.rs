@@ -75,19 +75,26 @@ impl FontConfig {
                 let noto_sans_jp = include_bytes!("../assets/fonts/NotoSansJP-Regular.ttf");
                 fonts.font_data.insert(
                     "NotoSansJP".to_owned(),
-                    egui::FontData::from_static(noto_sans_jp),
+                    std::sync::Arc::new(egui::FontData::from_static(noto_sans_jp)),
                 );
 
-                // Noto Color Emojiフォントデータを埋め込み（絵文字用）
-                let noto_emoji = include_bytes!("../assets/fonts/NotoColorEmoji.ttf");
+                // Noto Emojiフォントデータを埋め込み（絵文字用）
+                // notedeckと同じ設定を使用
+                let noto_emoji = include_bytes!("../assets/fonts/NotoEmoji-Regular.ttf");
                 fonts.font_data.insert(
-                    "NotoColorEmoji".to_owned(),
-                    egui::FontData::from_static(noto_emoji),
+                    "NotoEmoji".to_owned(),
+                    std::sync::Arc::new(egui::FontData::from_static(noto_emoji)
+                        .tweak(egui::FontTweak {
+                            scale: 1.1, // 少し大きく
+                            y_offset_factor: 0.0,
+                            y_offset: 0.0,
+                            baseline_offset_factor: 0.0,
+                        })),
                 );
 
                 // Proportionalファミリーの優先順位を設定
                 // 1. NotoSansJP (日本語)
-                // 2. NotoColorEmoji (絵文字)
+                // 2. NotoEmoji (絵文字)
                 // 3. その他のデフォルトフォント
                 fonts
                     .families
@@ -99,7 +106,7 @@ impl FontConfig {
                     .families
                     .get_mut(&egui::FontFamily::Proportional)
                     .unwrap()
-                    .insert(1, "NotoColorEmoji".to_owned());
+                    .insert(1, "NotoEmoji".to_owned());
 
                 // Monospaceファミリーにも追加（コードブロック用）
                 fonts
@@ -112,7 +119,7 @@ impl FontConfig {
                     .families
                     .get_mut(&egui::FontFamily::Monospace)
                     .unwrap()
-                    .insert(1, "NotoColorEmoji".to_owned());
+                    .insert(1, "NotoEmoji".to_owned());
                 
                 ctx.set_fonts(fonts);
             }

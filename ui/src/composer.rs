@@ -18,7 +18,7 @@ impl Composer {
         let mut should_send = false;
         
         ui.vertical(|ui| {
-            ui.label("✏ Compose Message");
+            crate::emoji_label::emoji_label(ui, "✏ Compose Message");
             
             // テキスト入力
             let response = ui.add(
@@ -38,7 +38,7 @@ impl Composer {
                     should_send = true;
                 }
                 
-                ui.label(format!("{} chars", self.text.len()));
+                crate::emoji_label::emoji_label(ui, format!("{} chars", self.text.len()));
             });
         });
         
