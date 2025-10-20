@@ -397,3 +397,27 @@ impl Default for I18n {
     }
 }
 
+impl I18n {
+    // チャンネル一覧
+    pub fn channel_create_button(&self) -> &'static str {
+        match self.language {
+            Language::Japanese => "➕ 新規チャンネル",
+            Language::English => "➕ New Channel",
+        }
+    }
+    
+    pub fn channel_list_empty(&self) -> &'static str {
+        match self.language {
+            Language::Japanese => "チャンネルがありません",
+            Language::English => "No channels",
+        }
+    }
+    
+    pub fn dm_list_empty(&self) -> &'static str {
+        match self.language {
+            Language::Japanese => "DMがありません",
+            Language::English => "No DMs",
+        }
+    }
+}
+

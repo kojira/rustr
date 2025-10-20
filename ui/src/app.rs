@@ -26,6 +26,13 @@ enum AppState {
     Main,
 }
 
+/// サイドバーのタブ
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SidebarTab {
+    Public,
+    DMs,
+}
+
 /// メインアプリケーション
 pub struct NostrApp {
     state: AppState,
@@ -45,6 +52,7 @@ pub struct NostrApp {
     show_channel_create: bool,
     channel_name_input: String,
     channel_about_input: String,
+    sidebar_tab: SidebarTab,  // Public / DMs タブ
     current_channel: Option<String>,
     current_dm_peer: Option<String>,
     error_message: Option<String>,
@@ -80,6 +88,7 @@ impl NostrApp {
             show_channel_create: false,
             channel_name_input: String::new(),
             channel_about_input: String::new(),
+            sidebar_tab: SidebarTab::Public,
             current_channel: None,
             current_dm_peer: None,
             error_message: None,
@@ -495,17 +504,6 @@ impl NostrApp {
             ui.horizontal(|ui| {
                 crate::emoji_label::emoji_heading(ui, "🦀 Rustr");
                 
-                ui.separator();
-                
-                if ui.button(self.i18n.button_public()).clicked() {
-                    self.show_channel_create = true;
-                }
-                
-                if ui.button(self.i18n.button_dms()).clicked() {
-                    // TODO: DM一覧を表示
-                    log::info!("DM list feature - not yet implemented");
-                }
-                
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button(self.i18n.button_settings()).clicked() {
                         self.show_settings = !self.show_settings;
@@ -513,6 +511,30 @@ impl NostrApp {
                 });
             });
         });
+        
+        // 左サイドバー（チャンネル/DM一覧）
+        egui::SidePanel::left("sidebar")
+            .default_width(250.0)
+            .resizable(true)
+            .show(ctx, |ui| {
+                // タブ切り替え
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut self.sidebar_tab, SidebarTab::Public, self.i18n.button_public());
+                    ui.selectable_value(&mut self.sidebar_tab, SidebarTab::DMs, self.i18n.button_dms());
+                });
+                
+                ui.separator();
+                
+                // タブに応じた一覧を表示
+                match self.sidebar_tab {
+                    SidebarTab::Public => {
+                        self.show_channel_list(ui);
+                    }
+                    SidebarTab::DMs => {
+                        self.show_dm_list(ui);
+                    }
+                }
+            });
         
         // 設定モーダル
         if self.show_settings {
@@ -609,31 +631,52 @@ impl NostrApp {
     fn create_new_channel(&mut self) {
         let name = self.channel_name_input.clone();
         let about = self.channel_about_input.clone();
+        let core_ref = self.core.clone();
         
-        if let Some(core) = self.core.borrow_mut().as_mut() {
-            wasm_bindgen_futures::spawn_local({
-                let core = self.core.clone();
-                async move {
-                    if let Some(core) = core.borrow_mut().as_mut() {
-                        match core.create_channel(&name, &about, "").await {
-                            Ok(channel_id) => {
-                                log::info!("✅ Channel created: {}", channel_id);
-                                // チャンネルを開く
-                                if let Err(e) = core.open_channel(&channel_id).await {
-                                    log::error!("Failed to open channel: {:?}", e);
-                                }
-                            }
-                            Err(e) => {
-                                log::error!("Failed to create channel: {:?}", e);
-                            }
+        wasm_bindgen_futures::spawn_local(async move {
+            if let Some(core) = core_ref.borrow_mut().as_mut() {
+                match core.create_channel(&name, &about, "").await {
+                    Ok(channel_id) => {
+                        log::info!("✅ Channel created: {}", channel_id);
+                        // チャンネルを開く
+                        if let Err(e) = core.open_channel(&channel_id).await {
+                            log::error!("Failed to open channel: {:?}", e);
                         }
                     }
+                    Err(e) => {
+                        log::error!("Failed to create channel: {:?}", e);
+                    }
                 }
-            });
-        }
+            }
+        });
         
         self.show_channel_create = false;
         self.channel_name_input.clear();
         self.channel_about_input.clear();
+    }
+    
+    /// チャンネル一覧を表示
+    fn show_channel_list(&mut self, ui: &mut egui::Ui) {
+        ui.vertical(|ui| {
+            // 新規作成ボタン
+            if ui.button(self.i18n.channel_create_button()).clicked() {
+                self.show_channel_create = true;
+            }
+            
+            ui.separator();
+            
+            // TODO: ストレージからチャンネル一覧を取得して表示
+            // 現在は仮実装
+            ui.label(self.i18n.channel_list_empty());
+        });
+    }
+    
+    /// DM一覧を表示
+    fn show_dm_list(&mut self, ui: &mut egui::Ui) {
+        ui.vertical(|ui| {
+            // TODO: ストレージからDM一覧を取得して表示
+            // 現在は仮実装
+            ui.label(self.i18n.dm_list_empty());
+        });
     }
 }
