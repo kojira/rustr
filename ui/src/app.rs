@@ -40,6 +40,9 @@ pub struct NostrApp {
     // UI状態
     show_composer: bool,
     show_settings: bool,
+    show_channel_create: bool,
+    channel_name_input: String,
+    channel_about_input: String,
     current_channel: Option<String>,
     current_dm_peer: Option<String>,
     error_message: Option<String>,
@@ -71,6 +74,9 @@ impl NostrApp {
             storage: Rc::new(RefCell::new(None)),
             show_composer: false,
             show_settings: false,
+            show_channel_create: false,
+            channel_name_input: String::new(),
+            channel_about_input: String::new(),
             current_channel: None,
             current_dm_peer: None,
             error_message: None,
@@ -488,19 +494,13 @@ impl NostrApp {
                 
                 ui.separator();
                 
-                // TODO: 実際のチャンネル一覧を表示する
-                // 現在は仮実装として無効化
-                // if ui.button("📢 Public").clicked() {
-                //     // 本来はチャンネル一覧から選択、または新規作成
-                //     self.open_channel("general".to_string());
-                // }
-                crate::emoji_label::emoji_label(ui, "📢 Public channels: 未実装");
+                if ui.button("📢 Public").clicked() {
+                    self.show_channel_create = true;
+                }
                 
                 if ui.button("💬 DMs").clicked() {
-                    // デモ用：特定のpubkeyとのDMを開く
-                    // 実装: StorageからDMスレッド一覧を取得して選択UI表示
+                    // TODO: DM一覧を表示
                     log::info!("DM list feature - not yet implemented");
-                    crate::emoji_label::emoji_label(ui, "DM一覧機能は今後実装予定");
                 }
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -525,6 +525,11 @@ impl NostrApp {
                         self.show_settings = false;
                     }
                 });
+        }
+        
+        // チャンネル作成モーダル
+        if self.show_channel_create {
+            self.show_channel_create_dialog(ctx);
         }
         
         // コンポーザー（下部）
@@ -560,5 +565,72 @@ impl NostrApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.timeline.show(ui);
         });
+    }
+    
+    /// チャンネル作成ダイアログ
+    fn show_channel_create_dialog(&mut self, ctx: &egui::Context) {
+        egui::Window::new("📢 新しいチャンネルを作成")
+            .collapsible(false)
+            .resizable(false)
+            .default_width(400.0)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    crate::emoji_label::emoji_label(ui, "チャンネル名:");
+                    ui.text_edit_singleline(&mut self.channel_name_input);
+                    
+                    ui.add_space(10.0);
+                    
+                    crate::emoji_label::emoji_label(ui, "説明:");
+                    ui.text_edit_multiline(&mut self.channel_about_input);
+                    
+                    ui.add_space(20.0);
+                    
+                    ui.horizontal(|ui| {
+                        if ui.button("✖ キャンセル").clicked() {
+                            self.show_channel_create = false;
+                            self.channel_name_input.clear();
+                            self.channel_about_input.clear();
+                        }
+                        
+                        if ui.button("✅ 作成").clicked() {
+                            if !self.channel_name_input.is_empty() {
+                                self.create_new_channel();
+                            }
+                        }
+                    });
+                });
+            });
+    }
+    
+    /// 新しいチャンネルを作成
+    fn create_new_channel(&mut self) {
+        let name = self.channel_name_input.clone();
+        let about = self.channel_about_input.clone();
+        
+        if let Some(core) = self.core.borrow_mut().as_mut() {
+            wasm_bindgen_futures::spawn_local({
+                let core = self.core.clone();
+                async move {
+                    if let Some(core) = core.borrow_mut().as_mut() {
+                        match core.create_channel(&name, &about, "").await {
+                            Ok(channel_id) => {
+                                log::info!("✅ Channel created: {}", channel_id);
+                                // チャンネルを開く
+                                if let Err(e) = core.open_channel(&channel_id).await {
+                                    log::error!("Failed to open channel: {:?}", e);
+                                }
+                            }
+                            Err(e) => {
+                                log::error!("Failed to create channel: {:?}", e);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        self.show_channel_create = false;
+        self.channel_name_input.clear();
+        self.channel_about_input.clear();
     }
 }
