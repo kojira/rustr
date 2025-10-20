@@ -43,16 +43,31 @@ cargo install wasm-pack
 
 ### WASMビルド
 
-**注意**: macOSではsecp256k1のビルドに問題がある場合があります。
-その場合は、GitHub Actionsでビルドするか、Linuxマシン/Dockerを使用してください。
+#### macOSの場合
+
+macOSでは、Homebrew版のLLVMを使用する必要があります：
+
+```bash
+# Homebrew版LLVMをインストール（未インストールの場合）
+brew install llvm
+
+# WASMをビルド
+./scripts/build-wasm.sh
+
+# または手動で
+cd ui
+CC=/opt/homebrew/opt/llvm/bin/clang AR=/opt/homebrew/opt/llvm/bin/llvm-ar wasm-pack build --target web --out-dir pkg
+```
+
+#### Linux/その他の場合
 
 ```bash
 # WASMをビルド
 ./scripts/build-wasm.sh
 
 # または手動で
-cd core
-wasm-pack build --target web --out-dir ../ui/pkg
+cd ui
+wasm-pack build --target web --out-dir pkg
 ```
 
 ### 開発
@@ -164,21 +179,42 @@ rustr/
 
 ### macOSでのビルドエラー
 
-macOSのApple clangはWASMターゲットをサポートしていない場合があります。
-
-解決策：
-1. GitHub Actionsでビルド（推奨）
-2. Dockerを使用してLinux環境でビルド
-3. Linuxマシンでビルド
-
-### ビルドエラー: `secp256k1-sys`
-
+#### 症状
 ```
 error: unable to create target: 'No available targets are compatible with triple "wasm32-unknown-unknown"'
 ```
 
-これはシステムのclangがWASMターゲットをサポートしていないためです。
-GitHub ActionsまたはLinux環境でビルドしてください。
+#### 原因
+macOSのApple clangはWASMターゲットをサポートしていません。
+
+#### 解決策
+Homebrew版のLLVMを使用してください：
+
+```bash
+# LLVMをインストール
+brew install llvm
+
+# 環境変数を設定してビルド
+cd ui
+CC=/opt/homebrew/opt/llvm/bin/clang AR=/opt/homebrew/opt/llvm/bin/llvm-ar wasm-pack build --target web --out-dir pkg
+```
+
+または、`./scripts/build-wasm.sh`スクリプトが自動的にLLVMを使用します。
+
+### ブラウザで表示されない
+
+#### 症状
+ブラウザで開いても白い画面のまま
+
+#### 確認事項
+1. ブラウザのコンソール（F12）でエラーを確認
+2. `ui/pkg/`ディレクトリに`ui.js`、`ui_bg.wasm`が存在するか確認
+3. 正しいディレクトリでサーバーを起動しているか確認（`ui/pkg/`で起動）
+
+```bash
+cd ui/pkg
+python3 -m http.server 8080
+```
 
 ## ライセンス
 
