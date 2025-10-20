@@ -1,4 +1,5 @@
 use eframe::egui;
+use core::types::UiRow;
 
 /// タイムライン表示
 pub struct Timeline {
@@ -50,17 +51,25 @@ impl Timeline {
     /// DMのイベントを読み込み
     pub fn load_dm(&mut self, peer: &str) {
         log::info!("Loading DM with: {}", peer);
-        // TODO: CoreHandle経由でDMを取得
+        self.events.clear();
+    }
+    
+    /// イベントを追加
+    pub fn add_event(&mut self, ui_row: UiRow) {
+        let event = TimelineEvent {
+            id: ui_row.id,
+            pubkey: ui_row.pubkey,
+            content: ui_row.content,
+            created_at: ui_row.created_at,
+            kind: ui_row.kind,
+        };
         
-        self.events = vec![
-            TimelineEvent {
-                id: "dm1".to_string(),
-                pubkey: peer.to_string(),
-                content: "Hey, how are you?".to_string(),
-                created_at: 1700000200,
-                kind: 4,
-            },
-        ];
+        // 重複チェック
+        if !self.events.iter().any(|e| e.id == event.id) {
+            self.events.push(event);
+            // created_atで降順ソート（新しいものが上）
+            self.events.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        }
     }
     
     /// タイムライン表示

@@ -63,6 +63,16 @@ impl CoreHandle {
         }
     }
 
+    /// 全Relayに接続
+    pub async fn connect_all(&mut self) -> Result<()> {
+        for relay in &mut self.relays {
+            if let Err(e) = relay.connect().await {
+                log::error!("Failed to connect to {}: {:?}", relay.url, e);
+            }
+        }
+        Ok(())
+    }
+
     /// チャンネルを開く
     pub async fn open_channel(&mut self, channel_id: &str) -> Result<()> {
         let filters = self.sub_mgr.open_channel(channel_id);
